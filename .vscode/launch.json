@@ -1,27 +1,53 @@
 {
-	"version": "0.2.0",
-	"configurations": [
+    "version": "0.2.0",
+    
+    /*
+        CONFIGURATION INFO
 
+        * 'mode' values
+            1. debug
+            2. test
+            3. exec:  pre-built binary specified in 'program', with a value like ${workspaceRoot}/mybin.
+            4. remote: to attach to a remote headless Delve server. You must manually run Delve 
+                on the remote machine, and provide the additional remotePath, host and port debug
+                 configuration options pointing at the remote machine.
+
+        * Configuration only for remote debug: 'remotePath', 'port', 'host'.
+            
+    */
+	"configurations": [
+        {
+            "name": "Connect to server",
+            "type": "go",
+            "request": "launch",
+            "mode": "remote",
+            "remotePath": "${workspaceRoot}",
+            "port": 2345,
+            "host": "127.0.0.1",
+            "program": "${workspaceRoot}",
+            "env": {},
+            "args": []
+        },
+        {
+			"name": "Launch",
+			"type": "go",
+			"request": "launch",
+            "mode": "debug", 
+			//"remotePath": "",
+			//"port": 2345,
+			//"host": "127.0.0.1",
+			"program": "${workspaceRoot}",
+			"env": {},
+			"args": [],
+			"showLog": true
+		},
         {
             "name": "Launch Package",
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceRoot}/gowork/src/github.com/Ninh0Gauch0/golang/home_recipes_srv"
+            "program": "${workspaceRoot}"
         },
-		{
-			"name": "Launch",
-			"type": "go",
-			"request": "launch",
-			"mode": "debug",
-			"remotePath": "",
-			//"port": 2345,
-			//"host": "127.0.0.1",
-			"program": "${workspaceRoot}/gowork/src/github.com/Ninh0Gauch0/golang/home_recipes_srv/main.go",
-			"env": {},
-			"args": [],
-			"showLog": true
-		},
         {
             "name": "Launch test function",
             "type": "go",
@@ -39,18 +65,6 @@
             "request": "launch",
             "mode": "test",
             "program": "${workspaceRoot}"
-        },
-        {
-            "name": "Connect to server",
-            "type": "go",
-            "request": "launch",
-            "mode": "remote",
-            "remotePath": "${workspaceRoot}",
-            "port": 2345,
-            "host": "127.0.0.1",
-            "program": "${workspaceRoot}",
-            "env": {},
-            "args": []
-        }
+        }		
 	]
 }

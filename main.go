@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/Ninh0Gauch0/golang/home_recipes_srv/hrscli"
-	"github.com/Ninh0Gauch0/golang/home_recipes_srv/server"
+	"github.com/Ninh0Gauch0/home_recipes_srv/hrscli"
+	"github.com/Ninh0Gauch0/home_recipes_srv/server"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
