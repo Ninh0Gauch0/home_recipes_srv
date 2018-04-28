@@ -13,7 +13,9 @@ import (
 // Init the configuration needed to start the server
 func (s *Server) Init() bool {
 	s.router = mux.NewRouter()
-	s.router.PathPrefix("/hrs/")
+
+	//s.router.PathPrefix("/hrs")
+
 	//Reading configuration file
 	dat, err := ioutil.ReadFile("jsons/mongoconfig.json")
 	check(err)
@@ -72,7 +74,8 @@ func (s *Server) Start(config map[string]string) chan bool {
 func (s *Server) addRoutes() {
 
 	/** RECIPES ENDPOINTS**/
-	s.router.HandleFunc("/recipes", func(w http.ResponseWriter, r *http.Request) {
+	s.router.HandleFunc("/hrs/recipes", func(w http.ResponseWriter, r *http.Request) {
+		s.logger.Debugln("creating recipe...")
 		decoder := json.NewDecoder(r.Body)
 		var recipe Recipe
 		err := decoder.Decode(&recipe)
@@ -82,29 +85,137 @@ func (s *Server) addRoutes() {
 		defer r.Body.Close()
 
 		hrsResp := s.worker.CreateRecipe(recipe)
-
-		if hrsResp.GetError() != nil {
-			s.logger.Errorln("[POST] - ERROR: %s", hrsResp.GetError())
-		}
-
-		// TODO:return response object
-		fmt.Fprintf(w, "Recipe created\n")
+		data, _ := json.Marshal(hrsResp)
+		/*
+			if hrsResp.GetError() != nil {
+				s.logger.Errorln("[POST] - ERROR: %s", hrsResp.GetError())
+			}
+		*/
+		s.logger.Infoln("Recipe created")
+		w.WriteHeader(http.StatusCreated)
+		w.Write(data)
 	}).Methods("POST")
 
-	s.router.HandleFunc("/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
+	s.router.HandleFunc("/hrs/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
+		s.logger.Debugln("searching recipe...")
 		vars := mux.Vars(r)
 		id := vars["id"]
 
 		hrsResp := s.worker.GetRecipeByID(id)
-		s.logger.Infoln("Recipe returned: %s", hrsResp.RespObj)
+		data, _ := json.Marshal(hrsResp)
+		s.logger.Infoln("Recipe returned: ", id)
 
-		// TODO:return response object
-
-		fmt.Fprintf(w, "You've requested the recipe: %s\n", id)
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
 	}).Methods("GET")
 
+	s.router.HandleFunc("/hrs/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
+		s.logger.Debugln("patchting recipe...")
+		vars := mux.Vars(r)
+		id := vars["id"]
+
+		decoder := json.NewDecoder(r.Body)
+		var recipe Recipe
+		err := decoder.Decode(&recipe)
+		if err != nil {
+			panic(err)
+		}
+		defer r.Body.Close()
+
+		hrsResp := s.worker.PatchRecipeByID(id, recipe)
+		data, _ := json.Marshal(hrsResp)
+		s.logger.Infoln("Recipe modified: ", id)
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	}).Methods("PATCH")
+
+	s.router.HandleFunc("/hrs/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
+		s.logger.Debugln("deleting recipe...")
+		vars := mux.Vars(r)
+		id := vars["id"]
+
+		hrsResp := s.worker.DeleteRecipe(id)
+		data, _ := json.Marshal(hrsResp)
+		s.logger.Infoln("Recipe deleted: ", id)
+
+		w.WriteHeader(http.StatusNoContent)
+		w.Write(data)
+	}).Methods("DELETE")
+
+	/** INGREDIENTS ENDPOINTS **/
+	s.router.HandleFunc("/hrs/ingredients", func(w http.ResponseWriter, r *http.Request) {
+		s.logger.Debugln("creating ingredients...")
+		decoder := json.NewDecoder(r.Body)
+		var ingredient Ingredient
+		err := decoder.Decode(&ingredient)
+		if err != nil {
+			panic(err)
+		}
+		defer r.Body.Close()
+
+		hrsResp := s.worker.CreateIngredient(ingredient)
+		data, _ := json.Marshal(hrsResp)
+		/*
+			if hrsResp.GetError() != nil {
+				s.logger.Errorln("[POST] - ERROR: %s", hrsResp.GetError())
+			}
+		*/
+		s.logger.Infoln("Ingredient created")
+		w.WriteHeader(http.StatusCreated)
+		w.Write(data)
+	}).Methods("POST")
+
+	s.router.HandleFunc("/hrs/ingredients/{id}", func(w http.ResponseWriter, r *http.Request) {
+		s.logger.Debugln("searching ingredients...")
+		vars := mux.Vars(r)
+		id := vars["id"]
+
+		hrsResp := s.worker.GetIngredientByID(id)
+		data, _ := json.Marshal(hrsResp)
+		s.logger.Infoln("Ingredient returned: ", id)
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	}).Methods("GET")
+
+	s.router.HandleFunc("/hrs/ingredients/{id}", func(w http.ResponseWriter, r *http.Request) {
+		s.logger.Debugln("patching ingredients...")
+		vars := mux.Vars(r)
+		id := vars["id"]
+
+		decoder := json.NewDecoder(r.Body)
+		var ingredient Ingredient
+		err := decoder.Decode(&ingredient)
+		if err != nil {
+			panic(err)
+		}
+		defer r.Body.Close()
+
+		hrsResp := s.worker.PatchIngredientByID(id, ingredient)
+		data, _ := json.Marshal(hrsResp)
+		s.logger.Infoln("Ingredient modified: ", id)
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	}).Methods("PATCH")
+
+	s.router.HandleFunc("/hrs/ingredients/{id}", func(w http.ResponseWriter, r *http.Request) {
+		s.logger.Debugln("deleting ingredient...")
+
+		vars := mux.Vars(r)
+		id := vars["id"]
+
+		hrsResp := s.worker.DeleteIngredient(id)
+		data, _ := json.Marshal(hrsResp)
+		s.logger.Infoln("Ingredient deleted: ", id)
+
+		w.WriteHeader(http.StatusNoContent)
+		w.Write(data)
+	}).Methods("DELETE")
+
 	/** OTHER ENDPOINTS **/
-	s.router.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
+	s.router.HandleFunc("/hrs/status", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "WTF\n")
 	}).Methods("GET")
 }

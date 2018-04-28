@@ -9,6 +9,7 @@ import (
 
 // Ingredient DTO
 type Ingredient struct {
+	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Quantity    int    `json:"quantity"`
@@ -24,6 +25,16 @@ func (i *Ingredient) getObjectInfo() string {
 	quantity := "\nQuantity: " + strconv.Itoa(i.Quantity)
 	resp += quantity
 	return resp
+}
+
+// GetID function
+func (i *Ingredient) GetID() string {
+	return i.ID
+}
+
+// SetID function
+func (i *Ingredient) SetID(id string) {
+	i.ID = id
 }
 
 func (i *Ingredient) getName() string {

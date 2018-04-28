@@ -1,5 +1,10 @@
 package server
 
+import (
+	"strconv"
+	"strings"
+)
+
 /**
 ** RECIPE DEFINITION
  */
@@ -65,5 +70,15 @@ func (r *Recipe) GetIngredients() []Ingredient {
 
 // Interface ResponseObject Implementation
 func (r *Recipe) getObjectInfo() string {
-	return r.GetName()
+	info := []string{
+		r.GetName(),
+		r.GetDescription(),
+	}
+	resp := strings.Join(info, ": ")
+
+	for i, step := range r.GetSteps() {
+		resp += "\nStep " + strconv.Itoa(i) + ":" + step
+	}
+
+	return resp
 }
