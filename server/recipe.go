@@ -6,10 +6,21 @@ package server
 
 // Recipe DTO
 type Recipe struct {
+	ID          string       `json:"id"`
 	Name        string       `json:"name"`
 	Description string       `json:"description"`
 	Steps       []string     `json:"steps"`
 	Ingredients []Ingredient `json:"ingredients"`
+}
+
+// GetID function
+func (r *Recipe) GetID() string {
+	return r.ID
+}
+
+// SetID function
+func (r *Recipe) SetID(id string) {
+	r.ID = id
 }
 
 // GetName function

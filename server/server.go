@@ -13,7 +13,7 @@ import (
 // Init the configuration needed to start the server
 func (s *Server) Init() bool {
 	s.router = mux.NewRouter()
-
+	s.router.PathPrefix("/hrs/")
 	//Reading configuration file
 	dat, err := ioutil.ReadFile("jsons/mongoconfig.json")
 	check(err)
@@ -70,32 +70,43 @@ func (s *Server) Start(config map[string]string) chan bool {
 
 // addRoutes - Define API routes
 func (s *Server) addRoutes() {
-	s.router.HandleFunc("/hms/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
+
+	/** RECIPES ENDPOINTS**/
+	s.router.HandleFunc("/recipes", func(w http.ResponseWriter, r *http.Request) {
+		decoder := json.NewDecoder(r.Body)
+		var recipe Recipe
+		err := decoder.Decode(&recipe)
+		if err != nil {
+			panic(err)
+		}
+		defer r.Body.Close()
+
+		hrsResp := s.worker.CreateRecipe(recipe)
+
+		if hrsResp.GetError() != nil {
+			s.logger.Errorln("[POST] - ERROR: %s", hrsResp.GetError())
+		}
+
+		// TODO:return response object
+		fmt.Fprintf(w, "Recipe created\n")
+	}).Methods("POST")
+
+	s.router.HandleFunc("/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		id := vars["id"]
 
 		hrsResp := s.worker.GetRecipeByID(id)
-		s.logger.Infoln("Receipe returned: %s", hrsResp.GetError())
+		s.logger.Infoln("Recipe returned: %s", hrsResp.RespObj)
 
 		// TODO:return response object
 
 		fmt.Fprintf(w, "You've requested the recipe: %s\n", id)
-	}).Methods("GET").Schemes("http")
+	}).Methods("GET")
 
+	/** OTHER ENDPOINTS **/
 	s.router.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
-		/*
-			if s.worker.counter > 0 {
-				s.logger.Infof("Result counter increment: %d", s.worker.counter)
-				resp := []byte(strconv.Itoa(s.worker.counter))
-				w.WriteHeader(http.StatusOK)
-				w.Write(resp)
-			} else {
-				s.logger.Error("Increment counter error")
-				w.WriteHeader(http.StatusConflict)
-				w.Write([]byte("409 - Something bad happened!"))
-			}
-		*/
-	})
+		fmt.Fprintf(w, "WTF\n")
+	}).Methods("GET")
 }
 
 //TODO: Change error handling
