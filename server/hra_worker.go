@@ -21,6 +21,8 @@ const (
 	REMOVED = "Element removed"
 	// FAIL Constant
 	FAIL = "Failed validation"
+	// TECHNICAL Constant
+	TECHNICAL = "Technical error"
 )
 
 var (
@@ -51,7 +53,13 @@ func (w *Worker) CreateRecipe(recipe *Recipe) HRAResponse {
 		Code:        http.StatusCreated,
 		Description: CREATED,
 	}
-	id, _ := newUUID()
+	id, err := newUUID()
+
+	if err != nil {
+		rsp = generateErrorResponse(TECHNICAL, fmt.Sprintf("uuid generation error"), err, http.StatusConflict)
+		return rsp
+	}
+
 	dummyRecipe.SetID(id)
 	dummyRecipe.Steps = append(dummyRecipe.Steps, "Llamar al Foster", "Llamar al chino")
 	rsp.RespObj = &dummyRecipe
@@ -126,7 +134,13 @@ func (w *Worker) CreateIngredient(ingredient *Ingredient) HRAResponse {
 		Code:        http.StatusCreated,
 		Description: CREATED,
 	}
-	id, _ := newUUID()
+	id, err := newUUID()
+
+	if err != nil {
+		rsp = generateErrorResponse(TECHNICAL, fmt.Sprintf("uuid generation error"), err, http.StatusConflict)
+		return rsp
+	}
+
 	dummyIngredient.SetID(id)
 	rsp.RespObj = &dummyIngredient
 	rsp.SetError(nil)
@@ -194,6 +208,8 @@ func (w *Worker) DeleteIngredient(id string) HRAResponse {
 	w.logger.Debugf("Worker - DeleteIngredient [OUT]")
 	return rsp
 }
+
+/** PRIVATE METHODS **/
 
 // newUUID generates a random UUID according to RFC 4122
 func newUUID() (string, error) {
