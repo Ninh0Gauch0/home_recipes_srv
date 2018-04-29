@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -58,14 +59,14 @@ type ResponseObject interface {
 
 // Status DTO
 type Status struct {
-	Code        string `json:"code"`
+	Code        int    `json:"code"`
 	Description string `json:"description"`
 }
 
 // Interface ResponseObject Implementation
 func (r *Status) getObjectInfo() string {
 	info := []string{
-		r.Code,
+		strconv.Itoa(r.Code),
 		r.Description,
 	}
 	resp := strings.Join(info, ": ")

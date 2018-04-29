@@ -2,18 +2,37 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	// CREATED Constant
+	CREATED = "Created successfully"
+	// QUERIED Constant
+	QUERIED = "Query completed"
+	// PATCHED Constant
+	PATCHED = "Element patched successfully"
+	// REMOVED Constant
+	REMOVED = "Element removed"
+	// FAIL Constant
+	FAIL = "Failed validation"
+)
+
 var (
 	dummyRecipe = Recipe{
-		Name: "Dummy",
+		Name:        "Dummy Recipe",
+		Description: "This recipe sucks!",
+		Steps:       make([]string, 0, 4),
 	}
 	dummyIngredient = Ingredient{
-		Name: "Dummy",
+		Name:        "Dummy Ingredient",
+		Description: "This ingredient sucks!",
+		Quantity:    2,
 	}
 )
 
@@ -21,26 +40,23 @@ var (
 func (w *Worker) Init(ctx context.Context, logger *log.Entry) {
 	w.SetLogger(logger)
 	w.Ctx = ctx
-
 }
 
 // CreateRecipe - Creates a new recipe
-func (w *Worker) CreateRecipe(recipe Recipe) HRAResponse {
+func (w *Worker) CreateRecipe(recipe *Recipe) HRAResponse {
 	w.logger.Debugf("Worker - CreateRecipe [IN]")
+
 	rsp := HRAResponse{}
 	rsp.Status = Status{
-		Code:        "recipeCreated",
-		Description: "Recipe created successfully!",
+		Code:        http.StatusCreated,
+		Description: CREATED,
 	}
 	id, _ := newUUID()
-	/*	rsp.RespObj = &Recipe{
-			ID:   uuid,
-			Name: "Dummy recipe",
-		}
-	*/
 	dummyRecipe.SetID(id)
+	dummyRecipe.Steps = append(dummyRecipe.Steps, "Llamar al Foster", "Llamar al chino")
 	rsp.RespObj = &dummyRecipe
 	rsp.SetError(nil)
+
 	w.logger.Debugf(rsp.RespObj.getObjectInfo())
 	w.logger.Debugf("Worker - CreateRecipe [OUT]")
 	return rsp
@@ -50,17 +66,15 @@ func (w *Worker) CreateRecipe(recipe Recipe) HRAResponse {
 func (w *Worker) GetRecipeByID(id string) HRAResponse {
 	w.logger.Debugf("Worker - GetRecipebyId [IN]")
 	rsp := HRAResponse{}
-
-	if dummyRecipe.Name == "" {
-		funcError := FunctionalError{}
-		funcError.SetError(fmt.Errorf("Bad initialization"))
-		//  everything is ok if we try to assign a value of type *FunctionalError to HRSError
-		rsp.Error = &funcError
+	if id == "" {
+		err := FunctionalError{}
+		rsp = generateErrorResponse(FAIL, fmt.Sprintf("Mandatory parameter %s", id), err, http.StatusConflict)
+		return rsp
 	}
 
 	rsp.Status = Status{
-		Code:        "queryCompleted",
-		Description: "Query completed",
+		Code:        http.StatusOK,
+		Description: QUERIED,
 	}
 	rsp.RespObj = &dummyRecipe
 
@@ -70,13 +84,18 @@ func (w *Worker) GetRecipeByID(id string) HRAResponse {
 }
 
 // PatchRecipeByID - Given a id, a recipe is patched
-func (w *Worker) PatchRecipeByID(id string, recipe Recipe) HRAResponse {
+func (w *Worker) PatchRecipeByID(id string, recipe *Recipe) HRAResponse {
 	w.logger.Debugf("Worker - PatchRecipeByID [IN]")
 	rsp := HRAResponse{}
+	if id == "" {
+		err := FunctionalError{}
+		rsp = generateErrorResponse(FAIL, fmt.Sprintf("Mandatory parameter %s", id), err, http.StatusConflict)
+		return rsp
+	}
 
 	rsp.Status = Status{
-		Code:        "updateCompleted",
-		Description: "Recipe patched successfully",
+		Code:        http.StatusOK,
+		Description: PATCHED,
 	}
 	rsp.RespObj = &dummyRecipe
 
@@ -91,8 +110,8 @@ func (w *Worker) DeleteRecipe(id string) HRAResponse {
 	rsp := HRAResponse{}
 
 	rsp.Status = Status{
-		Code:        "deleteCompleted",
-		Description: "Recipe patched successfully",
+		Code:        http.StatusNoContent,
+		Description: REMOVED,
 	}
 	w.logger.Debugf(rsp.Status.getObjectInfo())
 	w.logger.Debugf("Worker - DeleteRecipe [OUT]")
@@ -100,12 +119,12 @@ func (w *Worker) DeleteRecipe(id string) HRAResponse {
 }
 
 // CreateIngredient - creates an ingredient
-func (w *Worker) CreateIngredient(ingredient Ingredient) HRAResponse {
+func (w *Worker) CreateIngredient(ingredient *Ingredient) HRAResponse {
 	w.logger.Debugf("Worker - CreateIngredient [IN]")
 	rsp := HRAResponse{}
 	rsp.Status = Status{
-		Code:        "ingredientCreated",
-		Description: "Ingredient created successfully!",
+		Code:        http.StatusCreated,
+		Description: CREATED,
 	}
 	id, _ := newUUID()
 	dummyIngredient.SetID(id)
@@ -120,19 +139,17 @@ func (w *Worker) CreateIngredient(ingredient Ingredient) HRAResponse {
 // GetIngredientByID - Given an id, returns an ingredient
 func (w *Worker) GetIngredientByID(id string) HRAResponse {
 	w.logger.Debugf("Worker - GetIngredientByID [IN]")
-	rsp := HRAResponse{}
 
-	//TODO: Manage errors
-	if dummyIngredient.Name == "" {
-		funcError := FunctionalError{}
-		funcError.SetError(fmt.Errorf("Bad initialization"))
-		//  everything is ok if we try to assign a value of type *FunctionalError to HRSError
-		rsp.Error = &funcError
+	rsp := HRAResponse{}
+	if id == "" {
+		err := FunctionalError{}
+		rsp = generateErrorResponse(FAIL, fmt.Sprintf("Mandatory parameter %s", id), err, http.StatusConflict)
+		return rsp
 	}
 
 	rsp.Status = Status{
-		Code:        "queryCompleted",
-		Description: "Query completed",
+		Code:        http.StatusOK,
+		Description: QUERIED,
 	}
 	rsp.RespObj = &dummyIngredient
 
@@ -142,13 +159,19 @@ func (w *Worker) GetIngredientByID(id string) HRAResponse {
 }
 
 // PatchIngredientByID - Given a id, an ingredient is patched
-func (w *Worker) PatchIngredientByID(id string, ingredient Ingredient) HRAResponse {
+func (w *Worker) PatchIngredientByID(id string, ingredient *Ingredient) HRAResponse {
 	w.logger.Debugf("Worker - PatchIngredientByID [IN]")
 	rsp := HRAResponse{}
 
+	if id == "" {
+		err := FunctionalError{}
+		rsp = generateErrorResponse(FAIL, fmt.Sprintf("Mandatory parameter %s", id), err, http.StatusConflict)
+		return rsp
+	}
+
 	rsp.Status = Status{
-		Code:        "updateCompleted",
-		Description: "Ingredient patched successfully",
+		Code:        http.StatusOK,
+		Description: PATCHED,
 	}
 	rsp.RespObj = &dummyIngredient
 
@@ -163,7 +186,7 @@ func (w *Worker) DeleteIngredient(id string) HRAResponse {
 	rsp := HRAResponse{}
 
 	rsp.Status = Status{
-		Code:        "deleteCompleted",
+		Code:        http.StatusNoContent,
 		Description: "Ingredient patched successfully",
 	}
 
@@ -174,11 +197,38 @@ func (w *Worker) DeleteIngredient(id string) HRAResponse {
 
 // newUUID generates a random UUID according to RFC 4122
 func newUUID() (string, error) {
-	uuid, err := uuid.NewV4()
+	newUUID, err := uuid.NewV4()
 
 	if err != nil {
 		return "", err
 	}
 
-	return uuid.String(), nil
+	return newUUID.String(), nil
+}
+
+// GenerateErrorResponse - generates a error response
+func generateErrorResponse(errorMsg string, desc string, err interface{}, status int) HRAResponse {
+	rsp := HRAResponse{}
+
+	switch err.(type) { // this is an assert; asserting, "x is of this type"
+	case FunctionalError:
+		hrsError := TechnicalError{}
+		hrsError.SetError(errors.New(errorMsg))
+		//  everything is ok if we try to assign a value of type *technicalError to HRSError
+		rsp.SetError(&hrsError)
+	case TechnicalError:
+		hrsError := FunctionalError{}
+		hrsError.SetError(errors.New(errorMsg))
+		rsp.SetError(&hrsError)
+	default:
+		hrsError := FunctionalError{}
+		hrsError.SetError(errors.New(errorMsg))
+		rsp.SetError(&hrsError)
+	}
+
+	rsp.Status = Status{
+		Code:        status,
+		Description: desc,
+	}
+	return rsp
 }
