@@ -2,17 +2,26 @@ package server
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
-	"io"
 
+	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
+)
+
+var (
+	dummyRecipe = Recipe{
+		Name: "Dummy",
+	}
+	dummyIngredient = Ingredient{
+		Name: "Dummy",
+	}
 )
 
 // Init - Starts the worker
 func (w *Worker) Init(ctx context.Context, logger *log.Entry) {
 	w.SetLogger(logger)
 	w.Ctx = ctx
+
 }
 
 // CreateRecipe - Creates a new recipe
@@ -23,11 +32,14 @@ func (w *Worker) CreateRecipe(recipe Recipe) HRAResponse {
 		Code:        "recipeCreated",
 		Description: "Recipe created successfully!",
 	}
-	uuid, _ := newUUID()
-	rsp.RespObj = &Recipe{
-		ID:   uuid,
-		Name: "Dummy recipe",
-	}
+	id, _ := newUUID()
+	/*	rsp.RespObj = &Recipe{
+			ID:   uuid,
+			Name: "Dummy recipe",
+		}
+	*/
+	dummyRecipe.SetID(id)
+	rsp.RespObj = &dummyRecipe
 	rsp.SetError(nil)
 	w.logger.Debugf(rsp.RespObj.getObjectInfo())
 	w.logger.Debugf("Worker - CreateRecipe [OUT]")
@@ -38,10 +50,6 @@ func (w *Worker) CreateRecipe(recipe Recipe) HRAResponse {
 func (w *Worker) GetRecipeByID(id string) HRAResponse {
 	w.logger.Debugf("Worker - GetRecipebyId [IN]")
 	rsp := HRAResponse{}
-
-	dummyRecipe := Recipe{
-		Name: "Dummy",
-	}
 
 	if dummyRecipe.Name == "" {
 		funcError := FunctionalError{}
@@ -70,8 +78,10 @@ func (w *Worker) PatchRecipeByID(id string, recipe Recipe) HRAResponse {
 		Code:        "updateCompleted",
 		Description: "Recipe patched successfully",
 	}
+	rsp.RespObj = &dummyRecipe
+
 	w.logger.Debugf(rsp.RespObj.getObjectInfo())
-	w.logger.Debugf("Worker - PatchRecipeByID [IN]")
+	w.logger.Debugf("Worker - PatchRecipeByID [OUT]")
 	return rsp
 }
 
@@ -84,7 +94,7 @@ func (w *Worker) DeleteRecipe(id string) HRAResponse {
 		Code:        "deleteCompleted",
 		Description: "Recipe patched successfully",
 	}
-	w.logger.Debugf(rsp.RespObj.getObjectInfo())
+	w.logger.Debugf(rsp.Status.getObjectInfo())
 	w.logger.Debugf("Worker - DeleteRecipe [OUT]")
 	return rsp
 }
@@ -97,12 +107,11 @@ func (w *Worker) CreateIngredient(ingredient Ingredient) HRAResponse {
 		Code:        "ingredientCreated",
 		Description: "Ingredient created successfully!",
 	}
-	uuid, _ := newUUID()
-	rsp.RespObj = &Ingredient{
-		ID:   uuid,
-		Name: "Dummy ingredient",
-	}
+	id, _ := newUUID()
+	dummyIngredient.SetID(id)
+	rsp.RespObj = &dummyIngredient
 	rsp.SetError(nil)
+
 	w.logger.Debugf(rsp.RespObj.getObjectInfo())
 	w.logger.Debugf("Worker - CreateIngredient [OUT]")
 	return rsp
@@ -112,10 +121,6 @@ func (w *Worker) CreateIngredient(ingredient Ingredient) HRAResponse {
 func (w *Worker) GetIngredientByID(id string) HRAResponse {
 	w.logger.Debugf("Worker - GetIngredientByID [IN]")
 	rsp := HRAResponse{}
-
-	dummyIngredient := Ingredient{
-		Name: "Dummy",
-	}
 
 	//TODO: Manage errors
 	if dummyIngredient.Name == "" {
@@ -145,6 +150,7 @@ func (w *Worker) PatchIngredientByID(id string, ingredient Ingredient) HRARespon
 		Code:        "updateCompleted",
 		Description: "Ingredient patched successfully",
 	}
+	rsp.RespObj = &dummyIngredient
 
 	w.logger.Debugf(rsp.RespObj.getObjectInfo())
 	w.logger.Debugf("Worker - PatchIngredientByID [IN]")
@@ -161,22 +167,18 @@ func (w *Worker) DeleteIngredient(id string) HRAResponse {
 		Description: "Ingredient patched successfully",
 	}
 
-	w.logger.Debugf(rsp.RespObj.getObjectInfo())
+	w.logger.Debugf(rsp.Status.getObjectInfo())
 	w.logger.Debugf("Worker - DeleteIngredient [OUT]")
 	return rsp
 }
 
 // newUUID generates a random UUID according to RFC 4122
 func newUUID() (string, error) {
-	uuid := make([]byte, 16)
-	n, err := io.ReadFull(rand.Reader, uuid)
-	if n != len(uuid) || err != nil {
+	uuid, err := uuid.NewV4()
+
+	if err != nil {
 		return "", err
 	}
-	// variant bits; see section 4.1.1
-	uuid[8] = uuid[8]&^0xc0 | 0x80
-	// version 4 (pseudo-random); see section 4.1.3
-	uuid[6] = uuid[6]&^0xf0 | 0x40
-	resp := string(uuid[0:4]) + "-" + string(uuid[4:6]) + "-" + string(uuid[6:8]) + "-" + string(uuid[8:10]) + "-" + string(uuid[10:])
-	return resp, nil
+
+	return uuid.String(), nil
 }

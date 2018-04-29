@@ -30,7 +30,7 @@ func init() {
 		QuoteEmptyFields: true,
 	}
 	logger.Out = os.Stdout
-	logger.SetLevel(log.InfoLevel)
+	logger.SetLevel(log.DebugLevel)
 	// Log as JSON instead of the default ASCII formatter.
 	//log.SetFormatter(&log.JSONFormatter{})
 
