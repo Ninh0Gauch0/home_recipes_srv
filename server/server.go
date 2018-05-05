@@ -14,6 +14,7 @@ import (
 
 var (
 	logFileOn = true
+	logFile   *logfile.LogFile
 )
 
 const (
@@ -29,8 +30,8 @@ func (s *Server) Init() bool {
 	// Init logfile
 	logFile, err := logfile.New(
 		&logfile.LogFile{
-			FileName: "./logs/logFileName.log",
-			MaxSize:  500 * 1024,
+			FileName: "homeRecipesServer.log",
+			MaxSize:  1000 * 1024,
 			Flags:    logfile.FileOnly | logfile.RotateOnStart})
 	if err != nil {
 		s.logger.Errorf("Failed to create log file %s: %s", "logFileName", err.Error())
@@ -97,6 +98,9 @@ func (s *Server) Start(config map[string]string) chan bool {
 		if err != nil {
 			customErrorLogger(s, "Error shutdowning server - error: %s", err.Error())
 		}
+
+		// CLose the logfile
+		logFile.Close()
 	}()
 	go func() {
 		log.Printf("Listening on... %s", s.Addr)
