@@ -392,6 +392,7 @@ func customErrorLogger(server *Server, msg string, args ...interface{}) {
 
 	server.logger.Errorf(MSG, args)
 	server.logger.Errorln()
+
 	if logFileOn {
 		log.Printf(MSG, args)
 	}
@@ -403,6 +404,7 @@ func customInfoLogger(server *Server, msg string, args ...interface{}) {
 
 	server.logger.Infof(MSG, args)
 	server.logger.Infoln()
+
 	if logFileOn {
 		log.Printf(MSG, args)
 	}
