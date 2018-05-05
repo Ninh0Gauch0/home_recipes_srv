@@ -14,12 +14,13 @@ import (
 )
 
 const (
-	version = "0.3.0-beta"
+	version = "0.4.0-beta"
 )
 
 var (
 	baseContext   = context.Background()
 	contextLogger *log.Entry
+	exitChan      chan bool
 )
 
 func init() {
@@ -99,23 +100,28 @@ func main() {
 			"addr": fmt.Sprintf(":%s", c.String("port")),
 		}
 		// Init the server
-		s.Init()
-		// Starting the server
-		exitChan := s.Start(config)
+		if s.Init() {
+			// Starting the server
+			exitChan = s.Start(config)
 
-		// Waiting for terminal signals
-		sigs := make(chan os.Signal)
-		signal.Notify(sigs, os.Interrupt, os.Kill, syscall.SIGTERM)
-		sig := <-sigs
-		switch sig {
-		case syscall.SIGINT:
-			fallthrough
-		case os.Interrupt:
-			fallthrough
-		case os.Kill:
-			fallthrough
-		case syscall.SIGTERM:
-			exitChan <- true
+			if exitChan != nil {
+				// Waiting for terminal signals
+				sigs := make(chan os.Signal)
+				signal.Notify(sigs, os.Interrupt, os.Kill, syscall.SIGTERM)
+				sig := <-sigs
+				switch sig {
+				case syscall.SIGINT:
+					fallthrough
+				case os.Interrupt:
+					fallthrough
+				case os.Kill:
+					fallthrough
+				case syscall.SIGTERM:
+					exitChan <- true
+				}
+			}
+		} else {
+			contextLogger.Fatalf("Fail on initialization...")
 		}
 	}
 
