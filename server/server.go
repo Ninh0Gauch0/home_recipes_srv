@@ -7,33 +7,54 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/leemcloughlin/logfile"
+
 	"github.com/gorilla/mux"
 )
 
+var (
+	logFileOn = true
+	logFile   *logfile.LogFile
+)
+
 const (
-	// DECODE_ERROR Constant
-	DECODE_ERROR = "Failed validation"
-	FATAL_ERROR  = "Fatal error"
+	// DECODEERROR Constant
+	DECODEERROR = "Failed validation"
+	// FATALERROR Constant
+	FATALERROR = "Fatal error"
 )
 
 // Init the configuration needed to start the server
 func (s *Server) Init() bool {
+
+	// Init logfile
+	logFile, err := logfile.New(
+		&logfile.LogFile{
+			FileName: "homeRecipesServer.log",
+			MaxSize:  1000 * 1024,
+			Flags:    logfile.FileOnly | logfile.RotateOnStart})
+	if err != nil {
+		s.logger.Errorf("Failed to create log file %s: %s", "logFileName", err.Error())
+		logFileOn = false
+	}
+	log.SetOutput(logFile)
+
+	// init router
 	s.router = mux.NewRouter()
 
-	//s.router.PathPrefix("/hrs")
-
 	//Reading configuration file
-	dat, err := ioutil.ReadFile("jsons/mongoconfig.json")
-
+	dat, err := ioutil.ReadFile("jsons/mongoconf.json")
 	if err != nil {
-		// TODO: Error handling
+		customErrorLogger(s, "Failed to read configuration mongodb file %s: %s", "mongoconf", err.Error())
+		return false
 	}
 
+	// Taking mongodb conf
 	var result MongoConf
 	err = json.Unmarshal(dat, &result)
-
 	if err != nil {
-		// TODO: Error handling
+		customErrorLogger(s, "Failed to unmarshal configuration json extracted from %s file: %s", "mongoconf", err.Error())
+		return false
 	}
 
 	s.initialized = true
@@ -58,6 +79,7 @@ func (s *Server) Start(config map[string]string) chan bool {
 	}
 
 	s.logger.Infof("Starting server....")
+
 	s.worker = &Worker{}
 	s.worker.Init(s.Ctx, s.GetLogger())
 
@@ -73,8 +95,11 @@ func (s *Server) Start(config map[string]string) chan bool {
 		err := s.Server.Shutdown(s.Ctx)
 
 		if err != nil {
-			s.logger.Errorln("Error shutdowning server - error: ", err.Error())
+			customErrorLogger(s, "Error shutdowning server - error: %s", err.Error())
 		}
+
+		// CLose the logfile
+		logFile.Close()
 	}()
 	go func() {
 		log.Printf("Listening on... %s", s.Addr)
@@ -86,9 +111,10 @@ func (s *Server) Start(config map[string]string) chan bool {
 
 // addRoutes - Define API routes
 func (s *Server) addRoutes() {
+	hrsRoutes := s.router.PathPrefix("/hrs").Subrouter()
 
 	/** RECIPES ENDPOINTS**/
-	s.router.HandleFunc("/hrs/recipes", func(w http.ResponseWriter, r *http.Request) {
+	hrsRoutes.HandleFunc("/recipes", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("creating recipe...")
 
 		var recipe Recipe
@@ -110,10 +136,10 @@ func (s *Server) addRoutes() {
 			data, err = json.Marshal(hrsResp)
 
 			if err != nil {
-				s.logger.Errorln("Json marshaling error")
+				customErrorLogger(s, "Json marshaling error - error: %s", err.Error())
 				marshallError(&hrsResp, &data, &err)
 			} else {
-				s.logger.Infoln("Recipe created")
+				customInfoLogger(s, "Recipe created:\n%s", hrsResp.RespObj.getObjectInfo())
 			}
 		}
 
@@ -121,7 +147,7 @@ func (s *Server) addRoutes() {
 		w.Write(data)
 	}).Methods("POST")
 
-	s.router.HandleFunc("/hrs/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
+	hrsRoutes.HandleFunc("/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("searching recipe...")
 		status := http.StatusOK
 
@@ -132,18 +158,18 @@ func (s *Server) addRoutes() {
 		data, err := json.Marshal(hrsResp)
 
 		if err != nil {
-			s.logger.Errorln("Json marshaling error")
+			customErrorLogger(s, "Json marshaling error - error: %s", err.Error())
 			marshallError(&hrsResp, &data, &err)
 			status = http.StatusConflict
 		} else {
-			s.logger.Infoln("Recipe returned: ", id)
+			customInfoLogger(s, "Recipe returned:\n%s", hrsResp.RespObj.getObjectInfo())
 		}
 
 		w.WriteHeader(status)
 		w.Write(data)
 	}).Methods("GET")
 
-	s.router.HandleFunc("/hrs/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
+	hrsRoutes.HandleFunc("/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("patchting recipe...")
 		var data []byte
 		var recipe Recipe
@@ -165,20 +191,19 @@ func (s *Server) addRoutes() {
 			data, err = json.Marshal(hrsResp)
 
 			if err != nil {
-				s.logger.Errorln("Json marshaling error")
+				customErrorLogger(s, "Json marshaling error - error: %s", err.Error())
 				marshallError(&hrsResp, &data, &err)
 				status = http.StatusConflict
 			} else {
-				s.logger.Infoln("Recipe patched: ", id)
+				customInfoLogger(s, "Recipe patched:\n%s", hrsResp.RespObj.getObjectInfo())
 			}
-
 		}
 
 		w.WriteHeader(status)
 		w.Write(data)
 	}).Methods("PATCH")
 
-	s.router.HandleFunc("/hrs/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
+	hrsRoutes.HandleFunc("/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("deleting recipe...")
 		status := http.StatusNoContent
 		vars := mux.Vars(r)
@@ -188,11 +213,11 @@ func (s *Server) addRoutes() {
 		data, err := json.Marshal(hrsResp)
 
 		if err != nil {
-			s.logger.Errorln("Json marshaling error")
+			customErrorLogger(s, "Json marshaling error - error: %s", err.Error())
 			marshallError(&hrsResp, &data, &err)
 			status = http.StatusConflict
 		} else {
-			s.logger.Infoln("Recipe deleted: ", id)
+			customInfoLogger(s, "Recipe deleted")
 		}
 
 		w.WriteHeader(status)
@@ -200,7 +225,7 @@ func (s *Server) addRoutes() {
 	}).Methods("DELETE")
 
 	/** INGREDIENTS ENDPOINTS **/
-	s.router.HandleFunc("/hrs/ingredients", func(w http.ResponseWriter, r *http.Request) {
+	hrsRoutes.HandleFunc("/ingredients", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("creating ingredients...")
 
 		var data []byte
@@ -221,11 +246,11 @@ func (s *Server) addRoutes() {
 			data, err = json.Marshal(hrsResp)
 
 			if err != nil {
-				s.logger.Errorln("Json marshaling error")
+				customErrorLogger(s, "Json marshaling error - error: %s", err.Error())
 				marshallError(&hrsResp, &data, &err)
 				status = http.StatusConflict
 			} else {
-				s.logger.Infoln("Ingredient created")
+				customInfoLogger(s, "Ingredient created:\n%s", hrsResp.RespObj.getObjectInfo())
 			}
 		}
 		defer r.Body.Close()
@@ -234,7 +259,7 @@ func (s *Server) addRoutes() {
 		w.Write(data)
 	}).Methods("POST")
 
-	s.router.HandleFunc("/hrs/ingredients/{id}", func(w http.ResponseWriter, r *http.Request) {
+	hrsRoutes.HandleFunc("/ingredients/{id}", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("searching ingredients...")
 		status := http.StatusOK
 		vars := mux.Vars(r)
@@ -244,18 +269,18 @@ func (s *Server) addRoutes() {
 		data, err := json.Marshal(hrsResp)
 
 		if err != nil {
-			s.logger.Errorln("Json marshaling error")
+			customErrorLogger(s, "Json marshaling error - error: %s", err.Error())
 			marshallError(&hrsResp, &data, &err)
 			status = http.StatusConflict
 		} else {
-			s.logger.Infoln("Ingredient returned: ", id)
+			customInfoLogger(s, "Ingredient returned:\n%s", hrsResp.RespObj.getObjectInfo())
 		}
 
 		w.WriteHeader(status)
 		w.Write(data)
 	}).Methods("GET")
 
-	s.router.HandleFunc("/hrs/ingredients/{id}", func(w http.ResponseWriter, r *http.Request) {
+	hrsRoutes.HandleFunc("/ingredients/{id}", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("patching ingredients...")
 		var data []byte
 		var ingredient Ingredient
@@ -277,11 +302,11 @@ func (s *Server) addRoutes() {
 			data, err = json.Marshal(hrsResp)
 
 			if err != nil {
-				s.logger.Errorln("Json marshaling error")
+				customErrorLogger(s, "Json marshaling error - error: %s", err.Error())
 				marshallError(&hrsResp, &data, &err)
 				status = http.StatusConflict
 			} else {
-				s.logger.Infoln("Ingredient modified: ", id)
+				customInfoLogger(s, "Ingredient modified:\n%s", hrsResp.RespObj.getObjectInfo())
 			}
 		}
 
@@ -289,7 +314,7 @@ func (s *Server) addRoutes() {
 		w.Write(data)
 	}).Methods("PATCH")
 
-	s.router.HandleFunc("/hrs/ingredients/{id}", func(w http.ResponseWriter, r *http.Request) {
+	hrsRoutes.HandleFunc("/ingredients/{id}", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("deleting ingredient...")
 		status := http.StatusNoContent
 		vars := mux.Vars(r)
@@ -299,11 +324,11 @@ func (s *Server) addRoutes() {
 		data, err := json.Marshal(hrsResp)
 
 		if err != nil {
-			s.logger.Errorln("Json marshaling error")
+			customErrorLogger(s, "Json marshaling error - error: %s", err.Error())
 			marshallError(&hrsResp, &data, &err)
 			status = http.StatusConflict
 		} else {
-			s.logger.Infoln("Ingredient deleted: ", id)
+			customInfoLogger(s, "Ingredient deleted")
 		}
 
 		w.WriteHeader(status)
@@ -311,7 +336,7 @@ func (s *Server) addRoutes() {
 	}).Methods("DELETE")
 
 	/** OTHER ENDPOINTS **/
-	s.router.HandleFunc("/hrs/status", func(w http.ResponseWriter, r *http.Request) {
+	hrsRoutes.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "WTF\n")
 	}).Methods("GET")
 }
@@ -326,7 +351,7 @@ func initResponse() HRAResponse {
 func fatalResponse(err error) HRAResponse {
 	status := Status{
 		Code:        http.StatusConflict,
-		Description: FATAL_ERROR,
+		Description: FATALERROR,
 	}
 	hrsError := FatalError{}
 	hrsError.SetError(err)
@@ -342,7 +367,7 @@ func decodeError(hrsResp *HRAResponse, data *[]byte, err *error) {
 	errRsp := initResponse()
 	errRsp.Status = Status{
 		Code:        http.StatusConflict,
-		Description: DECODE_ERROR,
+		Description: DECODEERROR,
 	}
 	*data, *err = json.Marshal(errRsp)
 
@@ -358,5 +383,29 @@ func marshallError(hrsResp *HRAResponse, data *[]byte, err *error) {
 
 	if err != nil {
 		*hrsResp = HRAResponse{}
+	}
+}
+
+// CustomErrorLogger - Writes error
+func customErrorLogger(server *Server, msg string, args ...interface{}) {
+	MSG := "[ERROR] " + msg
+
+	server.logger.Errorf(MSG, args)
+	server.logger.Errorln()
+
+	if logFileOn {
+		log.Printf(MSG, args)
+	}
+}
+
+// customInfoLogger - Writes info
+func customInfoLogger(server *Server, msg string, args ...interface{}) {
+	MSG := "[INFO] " + msg
+
+	server.logger.Infof(MSG, args)
+	server.logger.Infoln()
+
+	if logFileOn {
+		log.Printf(MSG, args)
 	}
 }

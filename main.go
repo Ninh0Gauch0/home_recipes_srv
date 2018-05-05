@@ -14,12 +14,14 @@ import (
 )
 
 const (
-	version = "0.5.0-beta"
+	version = "0.6.3-beta"
 )
 
 var (
 	baseContext   = context.Background()
 	contextLogger *log.Entry
+	exitChan      chan bool
+	app           *cli.App
 )
 
 func init() {
@@ -30,7 +32,7 @@ func init() {
 		QuoteEmptyFields: true,
 	}
 	logger.Out = os.Stdout
-	logger.SetLevel(log.DebugLevel)
+	logger.SetLevel(log.InfoLevel)
 	// Log as JSON instead of the default ASCII formatter.
 	//log.SetFormatter(&log.JSONFormatter{})
 
@@ -42,7 +44,8 @@ func init() {
 func main() {
 	// Create a cli app
 	contextLogger.Infof("Starting app...")
-	app := cli.NewApp()
+
+	app = cli.NewApp()
 	app.Version = version
 	app.Description = "Home Recipes App is an application made for my girlfriend; she's an awesome cook :D"
 	app.Authors = []cli.Author{
@@ -55,6 +58,7 @@ func main() {
 	// Flags definition
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{Name: "debug, d", Usage: "If set, the log level is set to DEBUG"},
+		cli.BoolFlag{Name: "error, e", Usage: "If set, the log level is set to ERROR"},
 		cli.BoolFlag{Name: "quiet, q", Usage: "If set, the log level is set to FATAL"},
 	}
 
@@ -80,13 +84,15 @@ func main() {
 			Ctx: serverContext,
 		}
 
-		if c.Bool("verbose") {
-			contextLogger.Infof("VERBOSE")
+		if c.GlobalBool("debug") {
 			contextLogger.Logger.SetLevel(log.DebugLevel)
 		}
 
-		if c.Bool("quiet") {
-			contextLogger.Infof("QUIET")
+		if c.GlobalBool("error") {
+			contextLogger.Logger.SetLevel(log.ErrorLevel)
+		}
+
+		if c.GlobalBool("quiet") {
 			contextLogger.Logger.SetLevel(log.FatalLevel)
 		}
 
@@ -99,23 +105,28 @@ func main() {
 			"addr": fmt.Sprintf(":%s", c.String("port")),
 		}
 		// Init the server
-		s.Init()
-		// Starting the server
-		exitChan := s.Start(config)
+		if s.Init() {
+			// Starting the server
+			exitChan = s.Start(config)
 
-		// Waiting for terminal signals
-		sigs := make(chan os.Signal)
-		signal.Notify(sigs, os.Interrupt, os.Kill, syscall.SIGTERM)
-		sig := <-sigs
-		switch sig {
-		case syscall.SIGINT:
-			fallthrough
-		case os.Interrupt:
-			fallthrough
-		case os.Kill:
-			fallthrough
-		case syscall.SIGTERM:
-			exitChan <- true
+			if exitChan != nil {
+				// Waiting for terminal signals
+				sigs := make(chan os.Signal)
+				signal.Notify(sigs, os.Interrupt, os.Kill, syscall.SIGTERM)
+				sig := <-sigs
+				switch sig {
+				case syscall.SIGINT:
+					fallthrough
+				case os.Interrupt:
+					fallthrough
+				case os.Kill:
+					fallthrough
+				case syscall.SIGTERM:
+					exitChan <- true
+				}
+			}
+		} else {
+			contextLogger.Fatalf("Fail on initialization...")
 		}
 	}
 
