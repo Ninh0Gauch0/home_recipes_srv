@@ -39,7 +39,6 @@
 			"program": "${workspaceRoot}",
 			"env": {},
             "args": ["-d","start"],
-            //"args": ["start"],
 			"showLog": true
 		},
         {

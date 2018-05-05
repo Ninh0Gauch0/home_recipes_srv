@@ -41,7 +41,6 @@ func (s *Server) Init() bool {
 
 	// init router
 	s.router = mux.NewRouter()
-	//s.router.PathPrefix("/hrs")
 
 	//Reading configuration file
 	dat, err := ioutil.ReadFile("jsons/mongoconf.json")
@@ -112,9 +111,10 @@ func (s *Server) Start(config map[string]string) chan bool {
 
 // addRoutes - Define API routes
 func (s *Server) addRoutes() {
+	hrsRoutes := s.router.PathPrefix("/hrs").Subrouter()
 
 	/** RECIPES ENDPOINTS**/
-	s.router.HandleFunc("/hrs/recipes", func(w http.ResponseWriter, r *http.Request) {
+	hrsRoutes.HandleFunc("/recipes", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("creating recipe...")
 
 		var recipe Recipe
@@ -147,7 +147,7 @@ func (s *Server) addRoutes() {
 		w.Write(data)
 	}).Methods("POST")
 
-	s.router.HandleFunc("/hrs/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
+	hrsRoutes.HandleFunc("/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("searching recipe...")
 		status := http.StatusOK
 
@@ -169,7 +169,7 @@ func (s *Server) addRoutes() {
 		w.Write(data)
 	}).Methods("GET")
 
-	s.router.HandleFunc("/hrs/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
+	hrsRoutes.HandleFunc("/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("patchting recipe...")
 		var data []byte
 		var recipe Recipe
@@ -203,7 +203,7 @@ func (s *Server) addRoutes() {
 		w.Write(data)
 	}).Methods("PATCH")
 
-	s.router.HandleFunc("/hrs/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
+	hrsRoutes.HandleFunc("/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("deleting recipe...")
 		status := http.StatusNoContent
 		vars := mux.Vars(r)
@@ -225,7 +225,7 @@ func (s *Server) addRoutes() {
 	}).Methods("DELETE")
 
 	/** INGREDIENTS ENDPOINTS **/
-	s.router.HandleFunc("/hrs/ingredients", func(w http.ResponseWriter, r *http.Request) {
+	hrsRoutes.HandleFunc("/ingredients", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("creating ingredients...")
 
 		var data []byte
@@ -259,7 +259,7 @@ func (s *Server) addRoutes() {
 		w.Write(data)
 	}).Methods("POST")
 
-	s.router.HandleFunc("/hrs/ingredients/{id}", func(w http.ResponseWriter, r *http.Request) {
+	hrsRoutes.HandleFunc("/ingredients/{id}", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("searching ingredients...")
 		status := http.StatusOK
 		vars := mux.Vars(r)
@@ -280,7 +280,7 @@ func (s *Server) addRoutes() {
 		w.Write(data)
 	}).Methods("GET")
 
-	s.router.HandleFunc("/hrs/ingredients/{id}", func(w http.ResponseWriter, r *http.Request) {
+	hrsRoutes.HandleFunc("/ingredients/{id}", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("patching ingredients...")
 		var data []byte
 		var ingredient Ingredient
@@ -314,7 +314,7 @@ func (s *Server) addRoutes() {
 		w.Write(data)
 	}).Methods("PATCH")
 
-	s.router.HandleFunc("/hrs/ingredients/{id}", func(w http.ResponseWriter, r *http.Request) {
+	hrsRoutes.HandleFunc("/ingredients/{id}", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("deleting ingredient...")
 		status := http.StatusNoContent
 		vars := mux.Vars(r)
@@ -336,7 +336,7 @@ func (s *Server) addRoutes() {
 	}).Methods("DELETE")
 
 	/** OTHER ENDPOINTS **/
-	s.router.HandleFunc("/hrs/status", func(w http.ResponseWriter, r *http.Request) {
+	hrsRoutes.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "WTF\n")
 	}).Methods("GET")
 }

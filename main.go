@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	version = "0.4.2-beta"
+	version = "0.4.3-beta"
 )
 
 var (
@@ -85,17 +85,14 @@ func main() {
 		}
 
 		if c.GlobalBool("debug") {
-			contextLogger.Infof("DEBUG")
 			contextLogger.Logger.SetLevel(log.DebugLevel)
 		}
 
 		if c.GlobalBool("error") {
-			contextLogger.Infof("ERROR")
 			contextLogger.Logger.SetLevel(log.ErrorLevel)
 		}
 
 		if c.GlobalBool("quiet") {
-			contextLogger.Infof("QUIET")
 			contextLogger.Logger.SetLevel(log.FatalLevel)
 		}
 
