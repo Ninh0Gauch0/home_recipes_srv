@@ -48,7 +48,7 @@ func (lt *LoggerTrait) GetLogger() *log.Entry {
 	return lt.logger
 }
 
-/** DTOs **/
+/** General DTOs **/
 
 // ResponseObject interface
 type ResponseObject interface {

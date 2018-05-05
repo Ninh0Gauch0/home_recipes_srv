@@ -87,7 +87,7 @@ func (s *Server) Start(config map[string]string) chan bool {
 
 	exitChan := make(chan bool)
 
-	// Go routines and channel to orchestate
+	// Go routines and channel to orchestrate
 	go func() {
 		<-exitChan
 		s.logger.Infoln("Stopping server")
