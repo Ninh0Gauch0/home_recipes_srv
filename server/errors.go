@@ -1,6 +1,10 @@
 package server
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/Ninh0Gauch0/home_recipes_srv/hola"
+)
 
 // HRSError interface
 type HRSError interface {
@@ -16,7 +20,8 @@ type FatalError struct {
 
 // ShowError - Shows
 func (fte *FatalError) ShowError() string {
-	return fmt.Sprintf("[ERROR] A fatal error occured: %v", fte.Err)
+	return holamundos.Hola()
+	//return fmt.Sprintf("[ERROR] A fatal error occured: %v", fte.Err)
 }
 
 // SetError function

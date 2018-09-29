@@ -24,6 +24,9 @@ var (
 	app           *cli.App
 )
 
+func Hola() string {
+	return "Hola"
+}
 func init() {
 	logger := log.StandardLogger()
 	logger.Formatter = &log.TextFormatter{
