@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/Ninh0Gauch0/home_recipes_srv/hrscli"
-	"github.com/Ninh0Gauch0/home_recipes_srv/server"
+	"github.com/ninh0gauch0/homerecipes/hrscli"
+	"github.com/ninh0gauch0/homerecipes/server"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
@@ -24,9 +24,6 @@ var (
 	app           *cli.App
 )
 
-func Hola() string {
-	return "Hola"
-}
 func init() {
 	logger := log.StandardLogger()
 	logger.Formatter = &log.TextFormatter{

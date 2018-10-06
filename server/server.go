@@ -7,9 +7,11 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/leemcloughlin/logfile"
-
 	"github.com/gorilla/mux"
+	"github.com/leemcloughlin/logfile"
+	"github.com/ninh0gauch0/hrstypes"
+
+	"github.com/ninh0gauch0/mongoconnector"
 )
 
 var (
@@ -50,7 +52,7 @@ func (s *Server) Init() bool {
 	}
 
 	// Taking mongodb conf
-	var result MongoConf
+	var result mongoconnector.MongoConf
 	err = json.Unmarshal(dat, &result)
 	if err != nil {
 		customErrorLogger(s, "Failed to unmarshal configuration json extracted from %s file: %s", "mongoconf", err.Error())
@@ -117,7 +119,7 @@ func (s *Server) addRoutes() {
 	hrsRoutes.HandleFunc("/recipes", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("creating recipe...")
 
-		var recipe Recipe
+		var recipe hrstypes.Recipe
 		var data []byte
 		var err error
 
@@ -172,7 +174,7 @@ func (s *Server) addRoutes() {
 	hrsRoutes.HandleFunc("/recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("patchting recipe...")
 		var data []byte
-		var recipe Recipe
+		var recipe hrstypes.Recipe
 
 		status := http.StatusOK
 		vars := mux.Vars(r)
@@ -235,7 +237,7 @@ func (s *Server) addRoutes() {
 		hrsResp := initResponse()
 
 		decoder := json.NewDecoder(r.Body)
-		var ingredient Ingredient
+		var ingredient hrstypes.Ingredient
 		err = decoder.Decode(&ingredient)
 
 		if err != nil {
@@ -283,7 +285,7 @@ func (s *Server) addRoutes() {
 	hrsRoutes.HandleFunc("/ingredients/{id}", func(w http.ResponseWriter, r *http.Request) {
 		s.logger.Debugln("patching ingredients...")
 		var data []byte
-		var ingredient Ingredient
+		var ingredient hrstypes.Ingredient
 
 		status := http.StatusOK
 		hrsResp := initResponse()
@@ -343,12 +345,12 @@ func (s *Server) addRoutes() {
 
 /** PRIVATE METHODS **/
 
-func initResponse() HRAResponse {
+func initResponse() hrstypes.HRAResponse {
 	resp := HRAResponse{}
 	return resp
 }
 
-func fatalResponse(err error) HRAResponse {
+func fatalResponse(err error) hrstypes.HRAResponse {
 	status := Status{
 		Code:        http.StatusConflict,
 		Description: FATALERROR,
@@ -363,7 +365,7 @@ func fatalResponse(err error) HRAResponse {
 	return resp
 }
 
-func decodeError(hrsResp *HRAResponse, data *[]byte, err *error) {
+func decodeError(hrsResp *hrstypes.HRAResponse, data *[]byte, err *error) {
 	errRsp := initResponse()
 	errRsp.Status = Status{
 		Code:        http.StatusConflict,
@@ -377,7 +379,7 @@ func decodeError(hrsResp *HRAResponse, data *[]byte, err *error) {
 	}
 }
 
-func marshallError(hrsResp *HRAResponse, data *[]byte, err *error) {
+func marshallError(hrsResp *hrstypes.HRAResponse, data *[]byte, err *error) {
 	*hrsResp = fatalResponse(*err)
 	*data, *err = json.Marshal(hrsResp)
 
