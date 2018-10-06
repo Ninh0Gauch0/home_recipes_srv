@@ -66,7 +66,7 @@ func (w *Worker) CreateRecipe(recipe *hrstypes.Recipe) hrstypes.HRAResponse {
 	rsp.RespObj = &dummyRecipe
 	rsp.SetError(nil)
 
-	w.logger.Debugf(rsp.RespObj.getObjectInfo())
+	w.logger.Debugf(rsp.RespObj.GetObjectInfo())
 	w.logger.Debugf("Worker - CreateRecipe [OUT]")
 	return rsp
 }
@@ -87,7 +87,7 @@ func (w *Worker) GetRecipeByID(id string) hrstypes.HRAResponse {
 	}
 	rsp.RespObj = &dummyRecipe
 
-	w.logger.Debugf(rsp.RespObj.getObjectInfo())
+	w.logger.Debugf(rsp.RespObj.GetObjectInfo())
 	w.logger.Debugf("Worker - GetRecipebyId [OUT]")
 	return rsp
 }
@@ -108,7 +108,7 @@ func (w *Worker) PatchRecipeByID(id string, recipe *hrstypes.Recipe) hrstypes.HR
 	}
 	rsp.RespObj = &dummyRecipe
 
-	w.logger.Debugf(rsp.RespObj.getObjectInfo())
+	w.logger.Debugf(rsp.RespObj.GetObjectInfo())
 	w.logger.Debugf("Worker - PatchRecipeByID [OUT]")
 	return rsp
 }
@@ -122,7 +122,7 @@ func (w *Worker) DeleteRecipe(id string) hrstypes.HRAResponse {
 		Code:        http.StatusNoContent,
 		Description: REMOVED,
 	}
-	w.logger.Debugf(rsp.Status.getObjectInfo())
+	w.logger.Debugf(rsp.Status.GetObjectInfo())
 	w.logger.Debugf("Worker - DeleteRecipe [OUT]")
 	return rsp
 }
@@ -146,7 +146,7 @@ func (w *Worker) CreateIngredient(ingredient *hrstypes.Ingredient) hrstypes.HRAR
 	rsp.RespObj = &dummyIngredient
 	rsp.SetError(nil)
 
-	w.logger.Debugf(rsp.RespObj.getObjectInfo())
+	w.logger.Debugf(rsp.RespObj.GetObjectInfo())
 	w.logger.Debugf("Worker - CreateIngredient [OUT]")
 	return rsp
 }
@@ -168,7 +168,7 @@ func (w *Worker) GetIngredientByID(id string) hrstypes.HRAResponse {
 	}
 	rsp.RespObj = &dummyIngredient
 
-	w.logger.Debugf(rsp.RespObj.getObjectInfo())
+	w.logger.Debugf(rsp.RespObj.GetObjectInfo())
 	w.logger.Debugf("Worker - GetIngredientByID [OUT]")
 	return rsp
 }
@@ -190,7 +190,7 @@ func (w *Worker) PatchIngredientByID(id string, ingredient *hrstypes.Ingredient)
 	}
 	rsp.RespObj = &dummyIngredient
 
-	w.logger.Debugf(rsp.RespObj.getObjectInfo())
+	w.logger.Debugf(rsp.RespObj.GetObjectInfo())
 	w.logger.Debugf("Worker - PatchIngredientByID [IN]")
 	return rsp
 }
@@ -205,7 +205,7 @@ func (w *Worker) DeleteIngredient(id string) hrstypes.HRAResponse {
 		Description: "Ingredient patched successfully",
 	}
 
-	w.logger.Debugf(rsp.Status.getObjectInfo())
+	w.logger.Debugf(rsp.Status.GetObjectInfo())
 	w.logger.Debugf("Worker - DeleteIngredient [OUT]")
 	return rsp
 }

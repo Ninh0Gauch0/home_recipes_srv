@@ -50,7 +50,7 @@ func (lt *LoggerTrait) GetLogger() *log.Entry {
 
 // // ResponseObject interface
 // type ResponseObject interface {
-// 	getObjectInfo() string
+// 	GetObjectInfo() string
 // }
 
 // /* Status Definition */
@@ -62,7 +62,7 @@ func (lt *LoggerTrait) GetLogger() *log.Entry {
 // }
 
 // // Interface ResponseObject Implementation
-// func (r *Status) getObjectInfo() string {
+// func (r *Status) GetObjectInfo() string {
 // 	info := []string{
 // 		strconv.Itoa(r.Code),
 // 		r.Description,

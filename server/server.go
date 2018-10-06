@@ -141,7 +141,7 @@ func (s *Server) addRoutes() {
 				customErrorLogger(s, "Json marshaling error - error: %s", err.Error())
 				marshallError(&hrsResp, &data, &err)
 			} else {
-				customInfoLogger(s, "Recipe created:\n%s", hrsResp.RespObj.getObjectInfo())
+				customInfoLogger(s, "Recipe created:\n%s", hrsResp.RespObj.GetObjectInfo())
 			}
 		}
 
@@ -164,7 +164,7 @@ func (s *Server) addRoutes() {
 			marshallError(&hrsResp, &data, &err)
 			status = http.StatusConflict
 		} else {
-			customInfoLogger(s, "Recipe returned:\n%s", hrsResp.RespObj.getObjectInfo())
+			customInfoLogger(s, "Recipe returned:\n%s", hrsResp.RespObj.GetObjectInfo())
 		}
 
 		w.WriteHeader(status)
@@ -197,7 +197,7 @@ func (s *Server) addRoutes() {
 				marshallError(&hrsResp, &data, &err)
 				status = http.StatusConflict
 			} else {
-				customInfoLogger(s, "Recipe patched:\n%s", hrsResp.RespObj.getObjectInfo())
+				customInfoLogger(s, "Recipe patched:\n%s", hrsResp.RespObj.GetObjectInfo())
 			}
 		}
 
@@ -252,7 +252,7 @@ func (s *Server) addRoutes() {
 				marshallError(&hrsResp, &data, &err)
 				status = http.StatusConflict
 			} else {
-				customInfoLogger(s, "Ingredient created:\n%s", hrsResp.RespObj.getObjectInfo())
+				customInfoLogger(s, "Ingredient created:\n%s", hrsResp.RespObj.GetObjectInfo())
 			}
 		}
 		defer r.Body.Close()
@@ -275,7 +275,7 @@ func (s *Server) addRoutes() {
 			marshallError(&hrsResp, &data, &err)
 			status = http.StatusConflict
 		} else {
-			customInfoLogger(s, "Ingredient returned:\n%s", hrsResp.RespObj.getObjectInfo())
+			customInfoLogger(s, "Ingredient returned:\n%s", hrsResp.RespObj.GetObjectInfo())
 		}
 
 		w.WriteHeader(status)
@@ -308,7 +308,7 @@ func (s *Server) addRoutes() {
 				marshallError(&hrsResp, &data, &err)
 				status = http.StatusConflict
 			} else {
-				customInfoLogger(s, "Ingredient modified:\n%s", hrsResp.RespObj.getObjectInfo())
+				customInfoLogger(s, "Ingredient modified:\n%s", hrsResp.RespObj.GetObjectInfo())
 			}
 		}
 
@@ -346,18 +346,18 @@ func (s *Server) addRoutes() {
 /** PRIVATE METHODS **/
 
 func initResponse() hrstypes.HRAResponse {
-	resp := HRAResponse{}
+	resp := hrstypes.HRAResponse{}
 	return resp
 }
 
 func fatalResponse(err error) hrstypes.HRAResponse {
-	status := Status{
+	status := hrstypes.Status{
 		Code:        http.StatusConflict,
 		Description: FATALERROR,
 	}
-	hrsError := FatalError{}
+	hrsError := hrstypes.FatalError{}
 	hrsError.SetError(err)
-	resp := HRAResponse{
+	resp := hrstypes.HRAResponse{
 		Status: status,
 		Error:  &hrsError,
 	}
@@ -367,7 +367,7 @@ func fatalResponse(err error) hrstypes.HRAResponse {
 
 func decodeError(hrsResp *hrstypes.HRAResponse, data *[]byte, err *error) {
 	errRsp := initResponse()
-	errRsp.Status = Status{
+	errRsp.Status = hrstypes.Status{
 		Code:        http.StatusConflict,
 		Description: DECODEERROR,
 	}
@@ -384,7 +384,7 @@ func marshallError(hrsResp *hrstypes.HRAResponse, data *[]byte, err *error) {
 	*data, *err = json.Marshal(hrsResp)
 
 	if err != nil {
-		*hrsResp = HRAResponse{}
+		*hrsResp = hrstypes.HRAResponse{}
 	}
 }
 
