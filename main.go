@@ -24,6 +24,7 @@ var (
 	app           *cli.App
 )
 
+// init - always called at the begining
 func init() {
 	logger := log.StandardLogger()
 	logger.Formatter = &log.TextFormatter{
