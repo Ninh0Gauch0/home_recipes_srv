@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/ninh0gauch0/hrstypes"
+	mongo "github.com/ninh0gauch0/mongoconnector"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 )
@@ -54,15 +55,17 @@ func (w *Worker) CreateRecipe(recipe *hrstypes.Recipe) hrstypes.HRAResponse {
 		Code:        http.StatusCreated,
 		Description: CREATED,
 	}
-	id, err := newUUID()
 
-	if err != nil {
-		rsp = generateErrorResponse(TECHNICAL, fmt.Sprintf("uuid generation error"), err, http.StatusConflict)
-		return rsp
+	manager := mongo.Manager{
+		Ctx: w.Ctx,
 	}
 
-	dummyRecipe.SetID(id)
-	dummyRecipe.Steps = append(dummyRecipe.Steps, "Llamar al Foster", "Llamar al chino")
+	if manager.Init() {
+		manager.ExecuteInsert("recipes", recipe)
+	} else {
+		//TODO: Gestionar error
+	}
+
 	rsp.RespObj = &dummyRecipe
 	rsp.SetError(nil)
 

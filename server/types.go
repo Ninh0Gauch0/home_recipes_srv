@@ -45,28 +45,3 @@ func (lt *LoggerTrait) SetLogger(l *log.Entry) {
 func (lt *LoggerTrait) GetLogger() *log.Entry {
 	return lt.logger
 }
-
-/** General DTOs **/
-
-// // ResponseObject interface
-// type ResponseObject interface {
-// 	GetObjectInfo() string
-// }
-
-// /* Status Definition */
-
-// // Status DTO
-// type Status struct {
-// 	Code        int    `json:"code"`
-// 	Description string `json:"description"`
-// }
-
-// // Interface ResponseObject Implementation
-// func (r *Status) GetObjectInfo() string {
-// 	info := []string{
-// 		strconv.Itoa(r.Code),
-// 		r.Description,
-// 	}
-// 	resp := strings.Join(info, ": ")
-// 	return resp
-// }

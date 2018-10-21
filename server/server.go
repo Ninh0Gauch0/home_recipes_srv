@@ -11,7 +11,7 @@ import (
 	"github.com/leemcloughlin/logfile"
 	"github.com/ninh0gauch0/hrstypes"
 
-	"github.com/ninh0gauch0/mongoconnector"
+	mongoCon "github.com/ninh0gauch0/mongoconnector/types"
 )
 
 var (
@@ -52,7 +52,7 @@ func (s *Server) Init() bool {
 	}
 
 	// Taking mongodb conf
-	var result mongoconnector.MongoConf
+	var result mongoCon.MongoConf
 	err = json.Unmarshal(dat, &result)
 	if err != nil {
 		customErrorLogger(s, "Failed to unmarshal configuration json extracted from %s file: %s", "mongoconf", err.Error())
