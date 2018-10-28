@@ -8,6 +8,7 @@ import (
 
 	"github.com/ninh0gauch0/hrstypes"
 	mongo "github.com/ninh0gauch0/mongoconnector"
+	mngtypes "github.com/ninh0gauch0/mongoconnector/types"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 )
@@ -25,19 +26,8 @@ const (
 	FAIL = "Failed validation"
 	// TECHNICAL Constant
 	TECHNICAL = "Technical error"
-)
-
-var (
-	dummyRecipe = hrstypes.Recipe{
-		Name:        "Dummy Recipe",
-		Description: "This recipe sucks!",
-		Steps:       make([]string, 0, 4),
-	}
-	dummyIngredient = hrstypes.Ingredient{
-		Name:        "Dummy Ingredient",
-		Description: "This ingredient sucks!",
-		Quantity:    2,
-	}
+	// OPNOTCOMPLETED Constant
+	OPNOTCOMPLETED = "Operation not completed"
 )
 
 // Init - Starts the worker
@@ -51,23 +41,36 @@ func (w *Worker) CreateRecipe(recipe *hrstypes.Recipe) hrstypes.HRAResponse {
 	w.logger.Debugf("Worker - CreateRecipe [IN]")
 
 	rsp := hrstypes.HRAResponse{}
-	rsp.Status = hrstypes.Status{
-		Code:        http.StatusCreated,
-		Description: CREATED,
-	}
 
 	manager := mongo.Manager{
 		Ctx: w.Ctx,
 	}
 
 	if manager.Init() {
-		manager.ExecuteInsert("recipes", recipe)
-	} else {
-		//TODO: Gestionar error
-	}
+		recipeDTO := mapRecipeToMetadataObject(recipe)
 
-	rsp.RespObj = &dummyRecipe
-	rsp.SetError(nil)
+		res, err := manager.ExecuteInsert("recipes", recipeDTO)
+
+		if err == nil {
+			if res == 0 {
+				rsp.Status = hrstypes.Status{
+					Code:        http.StatusCreated,
+					Description: CREATED,
+				}
+				recipe = mapRecipeToDTOObject(recipeDTO)
+				rsp.RespObj = recipe
+				rsp.SetError(nil)
+			} else {
+				techErr := hrstypes.TechnicalError{}
+				rsp = generateErrorResponse(OPNOTCOMPLETED, fmt.Sprintf("Insertion can't be accomplished"), techErr, http.StatusConflict)
+			}
+		} else {
+			rsp = generateErrorResponse(TECHNICAL, fmt.Sprintf("Fatal error trying to insert"), err, http.StatusInternalServerError)
+		}
+	} else {
+		techErr := hrstypes.TechnicalError{}
+		rsp = generateErrorResponse(TECHNICAL, fmt.Sprintf("Connection problem"), techErr, http.StatusInternalServerError)
+	}
 
 	w.logger.Debugf(rsp.RespObj.GetObjectInfo())
 	w.logger.Debugf("Worker - CreateRecipe [OUT]")
@@ -88,7 +91,7 @@ func (w *Worker) GetRecipeByID(id string) hrstypes.HRAResponse {
 		Code:        http.StatusOK,
 		Description: QUERIED,
 	}
-	rsp.RespObj = &dummyRecipe
+	//rsp.RespObj = &dummyRecipe
 
 	w.logger.Debugf(rsp.RespObj.GetObjectInfo())
 	w.logger.Debugf("Worker - GetRecipebyId [OUT]")
@@ -109,7 +112,7 @@ func (w *Worker) PatchRecipeByID(id string, recipe *hrstypes.Recipe) hrstypes.HR
 		Code:        http.StatusOK,
 		Description: PATCHED,
 	}
-	rsp.RespObj = &dummyRecipe
+	//rsp.RespObj = &dummyRecipe
 
 	w.logger.Debugf(rsp.RespObj.GetObjectInfo())
 	w.logger.Debugf("Worker - PatchRecipeByID [OUT]")
@@ -138,15 +141,15 @@ func (w *Worker) CreateIngredient(ingredient *hrstypes.Ingredient) hrstypes.HRAR
 		Code:        http.StatusCreated,
 		Description: CREATED,
 	}
-	id, err := newUUID()
+	//id, err := newUUID()
 
-	if err != nil {
-		rsp = generateErrorResponse(TECHNICAL, fmt.Sprintf("uuid generation error"), err, http.StatusConflict)
-		return rsp
-	}
+	// if err != nil {
+	// 	rsp = generateErrorResponse(TECHNICAL, fmt.Sprintf("uuid generation error"), err, http.StatusConflict)
+	// 	return rsp
+	// }
 
-	dummyIngredient.SetID(id)
-	rsp.RespObj = &dummyIngredient
+	//dummyIngredient.SetID(id)
+	//rsp.RespObj = &dummyIngredient
 	rsp.SetError(nil)
 
 	w.logger.Debugf(rsp.RespObj.GetObjectInfo())
@@ -169,7 +172,7 @@ func (w *Worker) GetIngredientByID(id string) hrstypes.HRAResponse {
 		Code:        http.StatusOK,
 		Description: QUERIED,
 	}
-	rsp.RespObj = &dummyIngredient
+	//rsp.RespObj = &dummyIngredient
 
 	w.logger.Debugf(rsp.RespObj.GetObjectInfo())
 	w.logger.Debugf("Worker - GetIngredientByID [OUT]")
@@ -191,7 +194,7 @@ func (w *Worker) PatchIngredientByID(id string, ingredient *hrstypes.Ingredient)
 		Code:        http.StatusOK,
 		Description: PATCHED,
 	}
-	rsp.RespObj = &dummyIngredient
+	//rsp.RespObj = &dummyIngredient
 
 	w.logger.Debugf(rsp.RespObj.GetObjectInfo())
 	w.logger.Debugf("Worker - PatchIngredientByID [IN]")
@@ -229,19 +232,20 @@ func newUUID() (string, error) {
 // GenerateErrorResponse - generates a error response
 func generateErrorResponse(errorMsg string, desc string, err interface{}, status int) hrstypes.HRAResponse {
 	rsp := hrstypes.HRAResponse{}
+	rsp.RespObj = nil
 
 	switch err.(type) { // this is an assert; asserting, "x is of this type"
-	case hrstypes.FunctionalError:
+	case hrstypes.TechnicalError:
 		hrsError := hrstypes.TechnicalError{}
 		hrsError.SetError(errors.New(errorMsg))
 		//  everything is ok if we try to assign a value of type *technicalError to HRSError
 		rsp.SetError(&hrsError)
-	case hrstypes.TechnicalError:
+	case hrstypes.FunctionalError:
 		hrsError := hrstypes.FunctionalError{}
 		hrsError.SetError(errors.New(errorMsg))
 		rsp.SetError(&hrsError)
 	default:
-		hrsError := hrstypes.FunctionalError{}
+		hrsError := hrstypes.FatalError{}
 		hrsError.SetError(errors.New(errorMsg))
 		rsp.SetError(&hrsError)
 	}
@@ -249,6 +253,83 @@ func generateErrorResponse(errorMsg string, desc string, err interface{}, status
 	rsp.Status = hrstypes.Status{
 		Code:        status,
 		Description: desc,
+	}
+	return rsp
+}
+
+// -- MAPPERS -- //
+
+// maps a recipe DTOOBject to a recipe MetadataObject
+func mapRecipeToMetadataObject(recipe *hrstypes.Recipe) *mngtypes.Recipe {
+
+	rsp := &mngtypes.Recipe{}
+
+	if recipe != nil {
+		rsp.SetID(recipe.GetID())
+		rsp.SetName(recipe.GetName())
+		rsp.SetDescription(recipe.GetDescription())
+		rsp.SetIngredients(mapIngredientsToMetadataIngredients(recipe.GetIngredients()))
+		rsp.SetSteps(recipe.GetSteps())
+	}
+	return rsp
+}
+
+// maps a recipe MetadataObject to a recipe DTOOBject
+func mapRecipeToDTOObject(recipe *mngtypes.Recipe) *hrstypes.Recipe {
+	rsp := &hrstypes.Recipe{}
+
+	if recipe != nil {
+		rsp.SetID(recipe.GetID())
+		rsp.SetName(recipe.GetName())
+		rsp.SetDescription(recipe.GetDescription())
+		rsp.SetIngredients(mapIngredientsToDTOIngredients(recipe.GetIngredients()))
+		rsp.SetSteps(recipe.GetSteps())
+	}
+	return rsp
+}
+
+// maps a list of dto ingredients to a list of metadata ingredients
+func mapIngredientsToMetadataIngredients(ingredients []hrstypes.Ingredient) []mngtypes.Ingredient {
+	var lResponse []mngtypes.Ingredient
+
+	for key, value := range ingredients {
+		lResponse[key] = mapIngredientToMetadataObject(&value)
+	}
+	return lResponse
+}
+
+// maps a list of metadata ingredients to a list of dto ingredients
+func mapIngredientsToDTOIngredients(ingredients []mngtypes.Ingredient) []hrstypes.Ingredient {
+	var lResponse []hrstypes.Ingredient
+
+	for key, value := range ingredients {
+		lResponse[key] = mapIngredientToDTOOBject(&value)
+	}
+	return lResponse
+}
+
+// maps an ingredient DTOOBject to an ingredient MetadataObject
+func mapIngredientToMetadataObject(ingredient *hrstypes.Ingredient) mngtypes.Ingredient {
+	rsp := mngtypes.Ingredient{}
+
+	if ingredient != nil {
+		rsp.SetID(ingredient.GetID())
+		rsp.SetName(ingredient.GetName())
+		rsp.SetDescription(ingredient.GetDescription())
+		rsp.SetQuantity(ingredient.GetQuantity())
+	}
+	return rsp
+}
+
+// maps an ingredient MetadataObject to an ingredient DTOOBject
+func mapIngredientToDTOOBject(ingredient *mngtypes.Ingredient) hrstypes.Ingredient {
+	rsp := hrstypes.Ingredient{}
+
+	if ingredient != nil {
+		rsp.SetID(ingredient.GetID())
+		rsp.SetName(ingredient.GetName())
+		rsp.SetDescription(ingredient.GetDescription())
+		rsp.SetQuantity(ingredient.GetQuantity())
 	}
 	return rsp
 }
