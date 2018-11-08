@@ -3,15 +3,12 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/leemcloughlin/logfile"
 	"github.com/ninh0gauch0/hrstypes"
-
-	mongoCon "github.com/ninh0gauch0/mongoconnector/types"
 )
 
 var (
@@ -43,21 +40,6 @@ func (s *Server) Init() bool {
 
 	// init router
 	s.router = mux.NewRouter()
-
-	//Reading configuration file
-	dat, err := ioutil.ReadFile("jsons/mongoconf.json")
-	if err != nil {
-		customErrorLogger(s, "Failed to read configuration mongodb file %s: %s", "mongoconf", err.Error())
-		return false
-	}
-
-	// Taking mongodb conf
-	var result mongoCon.MongoConf
-	err = json.Unmarshal(dat, &result)
-	if err != nil {
-		customErrorLogger(s, "Failed to unmarshal configuration json extracted from %s file: %s", "mongoconf", err.Error())
-		return false
-	}
 
 	s.initialized = true
 	return true
