@@ -13,6 +13,9 @@
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
 
+.vscode
+
 debug
 home_recipes_srv
 homeRecipesServer.log
+hrMongoConnector.log

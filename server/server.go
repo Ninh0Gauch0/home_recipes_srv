@@ -79,7 +79,7 @@ func (s *Server) Start(config map[string]string) chan bool {
 		err := s.Server.Shutdown(s.Ctx)
 
 		if err != nil {
-			customErrorLogger(s, "Error shutdowning server - error: %s", err.Error())
+			s.customErrorLogger("Error shutdowning server - error: %s", err.Error())
 		}
 
 		// CLose the logfile
@@ -117,13 +117,21 @@ func (s *Server) addRoutes() {
 			status = http.StatusConflict
 		} else {
 			hrsResp = s.worker.CreateRecipe(&recipe)
+
 			data, err = json.Marshal(hrsResp)
 
 			if err != nil {
-				customErrorLogger(s, "Json marshaling error - error: %s", err.Error())
+				status = http.StatusConflict
+				s.customErrorLogger("Json marshaling error - error: %s", err.Error())
 				marshallError(&hrsResp, &data, &err)
 			} else {
-				customInfoLogger(s, "Recipe created:\n%s", hrsResp.RespObj.GetObjectInfo())
+				if hrsResp.Error != nil {
+					s.customErrorLogger(hrsResp.Error.ShowError())
+					status = hrsResp.Status.Code
+				} else {
+					s.customInfoLogger("Recipe created:\n%s", hrsResp.RespObj.GetObjectInfo())
+				}
+
 			}
 		}
 
@@ -139,14 +147,20 @@ func (s *Server) addRoutes() {
 		id := vars["id"]
 
 		hrsResp := s.worker.GetRecipeByID(id)
+
 		data, err := json.Marshal(hrsResp)
 
 		if err != nil {
-			customErrorLogger(s, "Json marshaling error - error: %s", err.Error())
-			marshallError(&hrsResp, &data, &err)
 			status = http.StatusConflict
+			s.customErrorLogger("Json marshaling error - error: %s", err.Error())
+			marshallError(&hrsResp, &data, &err)
 		} else {
-			customInfoLogger(s, "Recipe returned:\n%s", hrsResp.RespObj.GetObjectInfo())
+			if hrsResp.Error != nil {
+				s.customErrorLogger(hrsResp.Error.ShowError())
+				status = hrsResp.Status.Code
+			} else {
+				s.customInfoLogger("Recipe returned:\n%s", hrsResp.RespObj.GetObjectInfo())
+			}
 		}
 
 		w.WriteHeader(status)
@@ -175,11 +189,11 @@ func (s *Server) addRoutes() {
 			data, err = json.Marshal(hrsResp)
 
 			if err != nil {
-				customErrorLogger(s, "Json marshaling error - error: %s", err.Error())
+				s.customErrorLogger("Json marshaling error - error: %s", err.Error())
 				marshallError(&hrsResp, &data, &err)
 				status = http.StatusConflict
 			} else {
-				customInfoLogger(s, "Recipe patched:\n%s", hrsResp.RespObj.GetObjectInfo())
+				s.customInfoLogger("Recipe patched:\n%s", hrsResp.RespObj.GetObjectInfo())
 			}
 		}
 
@@ -197,11 +211,11 @@ func (s *Server) addRoutes() {
 		data, err := json.Marshal(hrsResp)
 
 		if err != nil {
-			customErrorLogger(s, "Json marshaling error - error: %s", err.Error())
+			s.customErrorLogger("Json marshaling error - error: %s", err.Error())
 			marshallError(&hrsResp, &data, &err)
 			status = http.StatusConflict
 		} else {
-			customInfoLogger(s, "Recipe deleted")
+			s.customInfoLogger("Recipe deleted")
 		}
 
 		w.WriteHeader(status)
@@ -230,11 +244,11 @@ func (s *Server) addRoutes() {
 			data, err = json.Marshal(hrsResp)
 
 			if err != nil {
-				customErrorLogger(s, "Json marshaling error - error: %s", err.Error())
+				s.customErrorLogger("Json marshaling error - error: %s", err.Error())
 				marshallError(&hrsResp, &data, &err)
 				status = http.StatusConflict
 			} else {
-				customInfoLogger(s, "Ingredient created:\n%s", hrsResp.RespObj.GetObjectInfo())
+				s.customInfoLogger("Ingredient created:\n%s", hrsResp.RespObj.GetObjectInfo())
 			}
 		}
 		defer r.Body.Close()
@@ -253,11 +267,11 @@ func (s *Server) addRoutes() {
 		data, err := json.Marshal(hrsResp)
 
 		if err != nil {
-			customErrorLogger(s, "Json marshaling error - error: %s", err.Error())
+			s.customErrorLogger("Json marshaling error - error: %s", err.Error())
 			marshallError(&hrsResp, &data, &err)
 			status = http.StatusConflict
 		} else {
-			customInfoLogger(s, "Ingredient returned:\n%s", hrsResp.RespObj.GetObjectInfo())
+			s.customInfoLogger("Ingredient returned:\n%s", hrsResp.RespObj.GetObjectInfo())
 		}
 
 		w.WriteHeader(status)
@@ -286,11 +300,11 @@ func (s *Server) addRoutes() {
 			data, err = json.Marshal(hrsResp)
 
 			if err != nil {
-				customErrorLogger(s, "Json marshaling error - error: %s", err.Error())
+				s.customErrorLogger("Json marshaling error - error: %s", err.Error())
 				marshallError(&hrsResp, &data, &err)
 				status = http.StatusConflict
 			} else {
-				customInfoLogger(s, "Ingredient modified:\n%s", hrsResp.RespObj.GetObjectInfo())
+				s.customInfoLogger("Ingredient modified:\n%s", hrsResp.RespObj.GetObjectInfo())
 			}
 		}
 
@@ -308,11 +322,11 @@ func (s *Server) addRoutes() {
 		data, err := json.Marshal(hrsResp)
 
 		if err != nil {
-			customErrorLogger(s, "Json marshaling error - error: %s", err.Error())
+			s.customErrorLogger("Json marshaling error - error: %s", err.Error())
 			marshallError(&hrsResp, &data, &err)
 			status = http.StatusConflict
 		} else {
-			customInfoLogger(s, "Ingredient deleted")
+			s.customInfoLogger("Ingredient deleted")
 		}
 
 		w.WriteHeader(status)
@@ -338,7 +352,7 @@ func fatalResponse(err error) hrstypes.HRAResponse {
 		Description: FATALERROR,
 	}
 	hrsError := hrstypes.FatalError{}
-	hrsError.SetError(err)
+	hrsError.SetError(err.Error())
 	resp := hrstypes.HRAResponse{
 		Status: status,
 		Error:  &hrsError,
@@ -371,11 +385,8 @@ func marshallError(hrsResp *hrstypes.HRAResponse, data *[]byte, err *error) {
 }
 
 // CustomErrorLogger - Writes error
-func customErrorLogger(server *Server, msg string, args ...interface{}) {
+func (s *Server) customErrorLogger(msg string, args ...interface{}) {
 	MSG := "[ERROR] " + msg
-
-	server.logger.Errorf(MSG, args)
-	server.logger.Errorln()
 
 	if logFileOn {
 		log.Printf(MSG, args)
@@ -383,11 +394,8 @@ func customErrorLogger(server *Server, msg string, args ...interface{}) {
 }
 
 // customInfoLogger - Writes info
-func customInfoLogger(server *Server, msg string, args ...interface{}) {
+func (s *Server) customInfoLogger(msg string, args ...interface{}) {
 	MSG := "[INFO] " + msg
-
-	server.logger.Infof(MSG, args)
-	server.logger.Infoln()
 
 	if logFileOn {
 		log.Printf(MSG, args)

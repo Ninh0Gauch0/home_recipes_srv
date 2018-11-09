@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	version = "0.0.9-beta"
+	version = "0.9.0-beta"
 )
 
 var (
@@ -72,7 +72,7 @@ func main() {
 	serverCommnad.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:  "port, p",
-			Value: "8080",
+			Value: "8089",
 			Usage: "Server port",
 		},
 	}

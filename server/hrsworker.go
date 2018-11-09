@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -73,7 +72,7 @@ func (w *Worker) CreateRecipe(recipe *hrstypes.Recipe) hrstypes.HRAResponse {
 		}
 	} else {
 		techErr := hrstypes.TechnicalError{}
-		return generateErrorResponse(TECHNICAL, fmt.Sprintf("Connection problem"), techErr, http.StatusInternalServerError)
+		return generateErrorResponse(TECHNICAL, fmt.Sprintf("Error trying to connect to database"), techErr, http.StatusInternalServerError)
 	}
 
 	w.logger.Debugf(rsp.RespObj.GetObjectInfo())
@@ -412,23 +411,23 @@ func newUUID() (string, error) {
 }
 
 // GenerateErrorResponse - generates a error response
-func generateErrorResponse(errorMsg string, desc string, err interface{}, status int) hrstypes.HRAResponse {
+func generateErrorResponse(desc string, errorMsg string, err interface{}, status int) hrstypes.HRAResponse {
 	rsp := hrstypes.HRAResponse{}
 	rsp.RespObj = nil
 
 	switch err.(type) { // this is an assert; asserting, "x is of this type"
 	case hrstypes.TechnicalError:
 		hrsError := hrstypes.TechnicalError{}
-		hrsError.SetError(errors.New(errorMsg))
+		hrsError.SetError(errorMsg)
 		//  everything is ok if we try to assign a value of type *technicalError to HRSError
 		rsp.SetError(&hrsError)
 	case hrstypes.FunctionalError:
 		hrsError := hrstypes.FunctionalError{}
-		hrsError.SetError(errors.New(errorMsg))
+		hrsError.SetError(errorMsg)
 		rsp.SetError(&hrsError)
 	default:
 		hrsError := hrstypes.FatalError{}
-		hrsError.SetError(errors.New(errorMsg))
+		hrsError.SetError(errorMsg)
 		rsp.SetError(&hrsError)
 	}
 
