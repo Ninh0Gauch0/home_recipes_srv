@@ -16,6 +16,6 @@
 .vscode
 
 debug
-home_recipes_srv
+homerecipes
 homeRecipesServer.log
 hrMongoConnector.log
