@@ -52,6 +52,8 @@ func (w *Worker) CreateRecipe(recipe *hrstypes.Recipe) hrstypes.HRAResponse {
 	if manager.Init() {
 		recipeDTO := mapRecipeToMetadataObject(recipe)
 
+		//TODO: CONSULTAR SI EXISTE EL ID
+
 		res, err := manager.ExecuteInsert(RECIPECOLL, recipeDTO)
 
 		if err == nil {
@@ -401,13 +403,13 @@ func (w *Worker) DeleteIngredient(id string) hrstypes.HRAResponse {
 
 // newUUID generates a random UUID according to RFC 4122
 func newUUID() (string, error) {
-	newUUID, err := uuid.NewV4()
+	UUID, err := uuid.NewV4()
 
 	if err != nil {
 		return "", err
 	}
 
-	return newUUID.String(), nil
+	return UUID.String(), nil
 }
 
 // GenerateErrorResponse - generates a error response
