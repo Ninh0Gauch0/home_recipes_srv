@@ -107,8 +107,22 @@ func (w *Worker) GetRecipeByID(id string) hrstypes.HRAResponse {
 				}
 
 				// Casting MetadataObject to Recipe
+				//original := mngtypes.Recipe(res)
+
+				//type assertion
 				original, ok := res.(*mngtypes.Recipe)
 
+				/*
+					// REFLECTION
+					fType := reflect.TypeOf(res)
+
+					fVal := reflect.New(fType)
+					fVal.Elem().Field(0).SetString("NEWID")
+					fVal.Elem().Field(1).SetString("Greetings")
+					f2 := fVal.Elem().Interface().(mngtypes.Recipe)
+					f2.GetID()
+					//				fmt.Printf("%+v, %d, %s\n", f2, f2.ID, f2.GetName())
+				*/
 				if ok {
 					recipe := mapRecipeToDTOObject(original)
 					rsp.RespObj = recipe
