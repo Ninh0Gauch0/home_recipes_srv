@@ -159,7 +159,12 @@ func (s *Server) addRoutes() {
 				s.customErrorLogger(hrsResp.Error.ShowError())
 				status = hrsResp.Status.Code
 			} else {
-				s.customInfoLogger("Recipe returned:\n%s", hrsResp.RespObj.GetObjectInfo())
+				if hrsResp.Error != nil {
+					s.customErrorLogger(hrsResp.Error.ShowError())
+					status = hrsResp.Status.Code
+				} else {
+					s.customInfoLogger("Recipe returned:\n%s", hrsResp.RespObj.GetObjectInfo())
+				}
 			}
 		}
 
@@ -193,7 +198,12 @@ func (s *Server) addRoutes() {
 				marshallError(&hrsResp, &data, &err)
 				status = http.StatusConflict
 			} else {
-				s.customInfoLogger("Recipe patched:\n%s", hrsResp.RespObj.GetObjectInfo())
+				if hrsResp.Error != nil {
+					s.customErrorLogger(hrsResp.Error.ShowError())
+					status = hrsResp.Status.Code
+				} else {
+					s.customInfoLogger("Recipe patched:\n%s", hrsResp.RespObj.GetObjectInfo())
+				}
 			}
 		}
 
@@ -253,7 +263,12 @@ func (s *Server) addRoutes() {
 				marshallError(&hrsResp, &data, &err)
 				status = http.StatusConflict
 			} else {
-				s.customInfoLogger("Ingredient created:\n%s", hrsResp.RespObj.GetObjectInfo())
+				if hrsResp.Error != nil {
+					s.customErrorLogger(hrsResp.Error.ShowError())
+					status = hrsResp.Status.Code
+				} else {
+					s.customInfoLogger("Ingredient created:\n%s", hrsResp.RespObj.GetObjectInfo())
+				}
 			}
 		}
 		defer r.Body.Close()
@@ -276,7 +291,12 @@ func (s *Server) addRoutes() {
 			marshallError(&hrsResp, &data, &err)
 			status = http.StatusConflict
 		} else {
-			s.customInfoLogger("Ingredient returned:\n%s", hrsResp.RespObj.GetObjectInfo())
+			if hrsResp.Error != nil {
+				s.customErrorLogger(hrsResp.Error.ShowError())
+				status = hrsResp.Status.Code
+			} else {
+				s.customInfoLogger("Ingredient returned:\n%s", hrsResp.RespObj.GetObjectInfo())
+			}
 		}
 
 		w.WriteHeader(status)
@@ -309,7 +329,12 @@ func (s *Server) addRoutes() {
 				marshallError(&hrsResp, &data, &err)
 				status = http.StatusConflict
 			} else {
-				s.customInfoLogger("Ingredient modified:\n%s", hrsResp.RespObj.GetObjectInfo())
+				if hrsResp.Error != nil {
+					s.customErrorLogger(hrsResp.Error.ShowError())
+					status = hrsResp.Status.Code
+				} else {
+					s.customInfoLogger("Ingredient modified:\n%s", hrsResp.RespObj.GetObjectInfo())
+				}
 			}
 		}
 
@@ -331,7 +356,12 @@ func (s *Server) addRoutes() {
 			marshallError(&hrsResp, &data, &err)
 			status = http.StatusConflict
 		} else {
-			s.customInfoLogger("Ingredient deleted")
+			if hrsResp.Error != nil {
+				s.customErrorLogger(hrsResp.Error.ShowError())
+				status = hrsResp.Status.Code
+			} else {
+				s.customInfoLogger("Ingredient deleted")
+			}
 		}
 
 		w.WriteHeader(status)
