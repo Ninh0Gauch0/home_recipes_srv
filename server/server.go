@@ -215,7 +215,12 @@ func (s *Server) addRoutes() {
 			marshallError(&hrsResp, &data, &err)
 			status = http.StatusConflict
 		} else {
-			s.customInfoLogger("Recipe deleted")
+			if hrsResp.Error != nil {
+				s.customErrorLogger(hrsResp.Error.ShowError())
+				status = hrsResp.Status.Code
+			} else {
+				s.customInfoLogger("Recipe deleted")
+			}
 		}
 
 		w.WriteHeader(status)
