@@ -7,7 +7,6 @@ import (
 
 	"github.com/ninh0gauch0/hrstypes"
 	mongo "github.com/ninh0gauch0/mongoconnector"
-	mngtypes "github.com/ninh0gauch0/mongoconnector/types"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 )
@@ -50,11 +49,7 @@ func (w *Worker) CreateRecipe(recipe *hrstypes.Recipe) hrstypes.HRAResponse {
 	}
 
 	if manager.Init() {
-		recipeDTO := mapRecipeToMetadataObject(recipe)
-
-		//TODO: CONSULTAR SI EXISTE EL ID
-
-		res, err := manager.ExecuteInsert(RECIPECOLL, recipeDTO)
+		res, err := manager.ExecuteInsert(RECIPECOLL, recipe)
 
 		if err == nil {
 			if res == 0 {
@@ -62,7 +57,6 @@ func (w *Worker) CreateRecipe(recipe *hrstypes.Recipe) hrstypes.HRAResponse {
 					Code:        http.StatusCreated,
 					Description: CREATED,
 				}
-				recipe = mapRecipeToDTOObject(recipeDTO)
 				rsp.RespObj = recipe
 				rsp.SetError(nil)
 			} else {
@@ -70,7 +64,8 @@ func (w *Worker) CreateRecipe(recipe *hrstypes.Recipe) hrstypes.HRAResponse {
 				return generateErrorResponse(OPNOTCOMPLETED, fmt.Sprintf("Insertion can't be accomplished"), techErr, http.StatusConflict)
 			}
 		} else {
-			return generateErrorResponse(TECHNICAL, fmt.Sprintf("Fatal error trying to insert"), err, http.StatusInternalServerError)
+			w.logger.Errorf("Worker - CreateRecipe - Error: " + err.Error())
+			return generateErrorResponse(TECHNICAL, fmt.Sprintf("Fatal error trying to insert: "+err.Error()), err, http.StatusInternalServerError)
 		}
 	} else {
 		techErr := hrstypes.TechnicalError{}
@@ -110,33 +105,16 @@ func (w *Worker) GetRecipeByID(id string) hrstypes.HRAResponse {
 				//original := mngtypes.Recipe(res)
 
 				//type assertion
-				original, ok := res.(*mngtypes.Recipe)
-
-				/*
-					// REFLECTION
-					fType := reflect.TypeOf(res)
-
-					fVal := reflect.New(fType)
-					fVal.Elem().Field(0).SetString("NEWID")
-					fVal.Elem().Field(1).SetString("Greetings")
-					f2 := fVal.Elem().Interface().(mngtypes.Recipe)
-					f2.GetID()
-					//				fmt.Printf("%+v, %d, %s\n", f2, f2.ID, f2.GetName())
-				*/
-				if ok {
-					recipe := mapRecipeToDTOObject(original)
-					rsp.RespObj = recipe
-					rsp.SetError(nil)
-				} else {
-					techErr := hrstypes.TechnicalError{}
-					return generateErrorResponse(OPNOTCOMPLETED, fmt.Sprintf("Error mapping the response"), techErr, http.StatusConflict)
-				}
+				//original, ok := res.(*mngtypes.Recipe)
+				rsp.RespObj = res
+				rsp.SetError(nil)
 			} else {
 				techErr := hrstypes.TechnicalError{}
 				return generateErrorResponse(OPNOTCOMPLETED, fmt.Sprintf("Query can't be accomplished"), techErr, http.StatusConflict)
 			}
 		} else {
-			return generateErrorResponse(TECHNICAL, fmt.Sprintf("Fatal error trying to query"), err, http.StatusInternalServerError)
+			w.logger.Errorf("Worker - GetRecipebyId - Error: " + err.Error())
+			return generateErrorResponse(TECHNICAL, fmt.Sprintf("Fatal error trying to query: "+err.Error()), err, http.StatusInternalServerError)
 		}
 	} else {
 		techErr := hrstypes.TechnicalError{}
@@ -152,12 +130,12 @@ func (w *Worker) GetRecipeByID(id string) hrstypes.HRAResponse {
 func (w *Worker) PatchRecipeByID(id string, recipe *hrstypes.Recipe) hrstypes.HRAResponse {
 	w.logger.Debugf("Worker - PatchRecipeByID [IN]")
 	rsp := hrstypes.HRAResponse{}
+
 	if id == "" {
 		err := hrstypes.FunctionalError{}
 		rsp = generateErrorResponse(FAIL, fmt.Sprintf("Mandatory parameter %s", id), err, http.StatusConflict)
 		return rsp
 	}
-
 	manager := mongo.Manager{
 		Ctx: w.Ctx,
 	}
@@ -178,13 +156,13 @@ func (w *Worker) PatchRecipeByID(id string, recipe *hrstypes.Recipe) hrstypes.HR
 				return generateErrorResponse(OPNOTCOMPLETED, fmt.Sprintf("Patch can't be accomplished"), techErr, http.StatusConflict)
 			}
 		} else {
-			return generateErrorResponse(TECHNICAL, fmt.Sprintf("Fatal error trying to patch"), err, http.StatusInternalServerError)
+			w.logger.Errorf("Worker - PatchRecipeByID - Error: " + err.Error())
+			return generateErrorResponse(TECHNICAL, fmt.Sprintf("Fatal error trying to patch: "+err.Error()), err, http.StatusInternalServerError)
 		}
 	} else {
 		techErr := hrstypes.TechnicalError{}
 		return generateErrorResponse(TECHNICAL, fmt.Sprintf("Connection problem"), techErr, http.StatusInternalServerError)
 	}
-
 	w.logger.Debugf(rsp.RespObj.GetObjectInfo())
 	w.logger.Debugf("Worker - PatchRecipeByID [OUT]")
 	return rsp
@@ -221,7 +199,8 @@ func (w *Worker) DeleteRecipe(id string) hrstypes.HRAResponse {
 				return generateErrorResponse(OPNOTCOMPLETED, fmt.Sprintf("Remove can't be accomplished"), techErr, http.StatusConflict)
 			}
 		} else {
-			return generateErrorResponse(TECHNICAL, fmt.Sprintf("Fatal error trying to remove"), err, http.StatusInternalServerError)
+			w.logger.Errorf("Worker - DeleteRecipe - Error: " + err.Error())
+			return generateErrorResponse(TECHNICAL, fmt.Sprintf("Fatal error trying to remove"+err.Error()), err, http.StatusInternalServerError)
 		}
 	} else {
 		techErr := hrstypes.TechnicalError{}
@@ -243,9 +222,7 @@ func (w *Worker) CreateIngredient(ingredient *hrstypes.Ingredient) hrstypes.HRAR
 	}
 
 	if manager.Init() {
-		ingredientDTO := mapIngredientToMetadataObject(ingredient)
-
-		res, err := manager.ExecuteInsert(INGREDIENTCOLL, ingredientDTO)
+		res, err := manager.ExecuteInsert(INGREDIENTCOLL, ingredient)
 
 		if err == nil {
 			if res == 0 {
@@ -253,7 +230,6 @@ func (w *Worker) CreateIngredient(ingredient *hrstypes.Ingredient) hrstypes.HRAR
 					Code:        http.StatusCreated,
 					Description: CREATED,
 				}
-				ingredient = mapIngredientToDTOObject(ingredientDTO)
 				rsp.RespObj = ingredient
 				rsp.SetError(nil)
 			} else {
@@ -261,7 +237,8 @@ func (w *Worker) CreateIngredient(ingredient *hrstypes.Ingredient) hrstypes.HRAR
 				return generateErrorResponse(OPNOTCOMPLETED, fmt.Sprintf("Insertion can't be accomplished"), techErr, http.StatusConflict)
 			}
 		} else {
-			return generateErrorResponse(TECHNICAL, fmt.Sprintf("Fatal error trying to insert"), err, http.StatusInternalServerError)
+			w.logger.Errorf("Worker - CreateIngredient - Error: " + err.Error())
+			return generateErrorResponse(TECHNICAL, fmt.Sprintf("Fatal error trying to insert: "+err.Error()), err, http.StatusInternalServerError)
 		}
 	} else {
 		techErr := hrstypes.TechnicalError{}
@@ -297,31 +274,20 @@ func (w *Worker) GetIngredientByID(id string) hrstypes.HRAResponse {
 					Code:        http.StatusOK,
 					Description: QUERIED,
 				}
-
-				// Casting MetadataObject to Ingredient
-				original, ok := res.(*mngtypes.Ingredient)
-
-				if ok {
-					ingredient := mapIngredientToDTOObject(original)
-					rsp.RespObj = ingredient
-					rsp.SetError(nil)
-				} else {
-					techErr := hrstypes.TechnicalError{}
-					return generateErrorResponse(OPNOTCOMPLETED, fmt.Sprintf("Error mapping the response"), techErr, http.StatusConflict)
-				}
+				rsp.RespObj = res
+				rsp.SetError(nil)
 			} else {
 				techErr := hrstypes.TechnicalError{}
 				return generateErrorResponse(OPNOTCOMPLETED, fmt.Sprintf("Query can't be accomplished"), techErr, http.StatusConflict)
 			}
 		} else {
-			return generateErrorResponse(TECHNICAL, fmt.Sprintf("Fatal error trying to query"), err, http.StatusInternalServerError)
+			w.logger.Errorf("Worker - GetIngredientByID - Error: " + err.Error())
+			return generateErrorResponse(TECHNICAL, fmt.Sprintf("Fatal error trying to query: "+err.Error()), err, http.StatusInternalServerError)
 		}
-
 	} else {
 		techErr := hrstypes.TechnicalError{}
 		return generateErrorResponse(TECHNICAL, fmt.Sprintf("Connection problem"), techErr, http.StatusInternalServerError)
 	}
-
 	w.logger.Debugf(rsp.RespObj.GetObjectInfo())
 	w.logger.Debugf("Worker - GetIngredientByID [OUT]")
 	return rsp
@@ -358,7 +324,8 @@ func (w *Worker) PatchIngredientByID(id string, ingredient *hrstypes.Ingredient)
 				return generateErrorResponse(OPNOTCOMPLETED, fmt.Sprintf("Patch can't be accomplished"), techErr, http.StatusConflict)
 			}
 		} else {
-			return generateErrorResponse(TECHNICAL, fmt.Sprintf("Fatal error trying to patch"), err, http.StatusInternalServerError)
+			w.logger.Errorf("Worker - PatchIngredientByID - Error: " + err.Error())
+			return generateErrorResponse(TECHNICAL, fmt.Sprintf("Fatal error trying to patch"+err.Error()), err, http.StatusInternalServerError)
 		}
 	} else {
 		techErr := hrstypes.TechnicalError{}
@@ -401,7 +368,8 @@ func (w *Worker) DeleteIngredient(id string) hrstypes.HRAResponse {
 				return generateErrorResponse(OPNOTCOMPLETED, fmt.Sprintf("Remove can't be accomplished"), techErr, http.StatusConflict)
 			}
 		} else {
-			return generateErrorResponse(TECHNICAL, fmt.Sprintf("Fatal error trying to remove"), err, http.StatusInternalServerError)
+			w.logger.Errorf("Worker - DeleteIngredient - Error: " + err.Error())
+			return generateErrorResponse(TECHNICAL, fmt.Sprintf("Fatal error trying to remove: "+err.Error()), err, http.StatusInternalServerError)
 		}
 	} else {
 		techErr := hrstypes.TechnicalError{}
@@ -457,56 +425,56 @@ func generateErrorResponse(desc string, errorMsg string, err interface{}, status
 // -- MAPPERS -- //
 
 // maps a recipe DTOOBject to a recipe MetadataObject
-func mapRecipeToMetadataObject(recipe *hrstypes.Recipe) *mngtypes.Recipe {
+// func mapRecipeToMetadataObject(recipe *hrstypes.Recipe) *mngtypes.Recipe {
 
-	rsp := &mngtypes.Recipe{}
+// 	rsp := &mngtypes.Recipe{}
 
-	if recipe != nil {
-		rsp.SetID(recipe.GetID())
-		rsp.SetName(recipe.GetName())
-		rsp.SetDescription(recipe.GetDescription())
-		rsp.SetIngredients(recipe.GetIngredients())
-		rsp.SetSteps(recipe.GetSteps())
-	}
-	return rsp
-}
+// 	if recipe != nil {
+// 		rsp.SetID(recipe.GetID())
+// 		rsp.SetName(recipe.GetName())
+// 		rsp.SetDescription(recipe.GetDescription())
+// 		rsp.SetIngredients(recipe.GetIngredients())
+// 		rsp.SetSteps(recipe.GetSteps())
+// 	}
+// 	return rsp
+// }
 
 // maps a recipe MetadataObject to a recipe DTOOBject
-func mapRecipeToDTOObject(recipe *mngtypes.Recipe) *hrstypes.Recipe {
-	rsp := &hrstypes.Recipe{}
+// func mapRecipeToDTOObject(recipe *mngtypes.Recipe) *hrstypes.Recipe {
+// 	rsp := &hrstypes.Recipe{}
 
-	if recipe != nil {
-		rsp.SetID(recipe.GetID())
-		rsp.SetName(recipe.GetName())
-		rsp.SetDescription(recipe.GetDescription())
-		rsp.SetIngredients(recipe.GetIngredients())
-		rsp.SetSteps(recipe.GetSteps())
-	}
-	return rsp
-}
+// 	if recipe != nil {
+// 		rsp.SetID(recipe.GetID())
+// 		rsp.SetName(recipe.GetName())
+// 		rsp.SetDescription(recipe.GetDescription())
+// 		rsp.SetIngredients(recipe.GetIngredients())
+// 		rsp.SetSteps(recipe.GetSteps())
+// 	}
+// 	return rsp
+// }
 
 // maps an ingredient DTOOBject to an ingredient MetadataObject
-func mapIngredientToMetadataObject(ingredient *hrstypes.Ingredient) *mngtypes.Ingredient {
-	rsp := &mngtypes.Ingredient{}
+// func mapIngredientToMetadataObject(ingredient *hrstypes.Ingredient) *mngtypes.Ingredient {
+// 	rsp := &mngtypes.Ingredient{}
 
-	if ingredient != nil {
-		rsp.SetID(ingredient.GetID())
-		rsp.SetName(ingredient.GetName())
-		rsp.SetDescription(ingredient.GetDescription())
-		rsp.SetQuantity(ingredient.GetQuantity())
-	}
-	return rsp
-}
+// 	if ingredient != nil {
+// 		rsp.SetID(ingredient.GetID())
+// 		rsp.SetName(ingredient.GetName())
+// 		rsp.SetDescription(ingredient.GetDescription())
+// 		rsp.SetQuantity(ingredient.GetQuantity())
+// 	}
+// 	return rsp
+// }
 
 // maps an ingredient MetadataObject to an ingredient DTOOBject
-func mapIngredientToDTOObject(ingredient *mngtypes.Ingredient) *hrstypes.Ingredient {
-	rsp := &hrstypes.Ingredient{}
+// func mapIngredientToDTOObject(ingredient *mngtypes.Ingredient) *hrstypes.Ingredient {
+// 	rsp := &hrstypes.Ingredient{}
 
-	if ingredient != nil {
-		rsp.SetID(ingredient.GetID())
-		rsp.SetName(ingredient.GetName())
-		rsp.SetDescription(ingredient.GetDescription())
-		rsp.SetQuantity(ingredient.GetQuantity())
-	}
-	return rsp
-}
+// 	if ingredient != nil {
+// 		rsp.SetID(ingredient.GetID())
+// 		rsp.SetName(ingredient.GetName())
+// 		rsp.SetDescription(ingredient.GetDescription())
+// 		rsp.SetQuantity(ingredient.GetQuantity())
+// 	}
+// 	return rsp
+// }
