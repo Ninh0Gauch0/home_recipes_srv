@@ -144,12 +144,12 @@ func (w *Worker) PatchRecipeByID(id string, recipe *hrstypes.Recipe) hrstypes.HR
 		res, err := manager.ExecuteUpdate(RECIPECOLL, id, recipe)
 
 		if err == nil {
-			if res == 0 {
+			if res != nil {
 				rsp.Status = hrstypes.Status{
 					Code:        http.StatusOK,
 					Description: PATCHED,
 				}
-				rsp.RespObj = nil
+				rsp.RespObj = res
 				rsp.SetError(nil)
 			} else {
 				techErr := hrstypes.TechnicalError{}
@@ -312,12 +312,12 @@ func (w *Worker) PatchIngredientByID(id string, ingredient *hrstypes.Ingredient)
 		res, err := manager.ExecuteUpdate(INGREDIENTCOLL, id, ingredient)
 
 		if err == nil {
-			if res == 0 {
+			if res != nil {
 				rsp.Status = hrstypes.Status{
 					Code:        http.StatusOK,
 					Description: PATCHED,
 				}
-				rsp.RespObj = nil
+				rsp.RespObj = res
 				rsp.SetError(nil)
 			} else {
 				techErr := hrstypes.TechnicalError{}
@@ -390,7 +390,6 @@ func newUUID() (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	return UUID.String(), nil
 }
 
@@ -421,60 +420,3 @@ func generateErrorResponse(desc string, errorMsg string, err interface{}, status
 	}
 	return rsp
 }
-
-// -- MAPPERS -- //
-
-// maps a recipe DTOOBject to a recipe MetadataObject
-// func mapRecipeToMetadataObject(recipe *hrstypes.Recipe) *mngtypes.Recipe {
-
-// 	rsp := &mngtypes.Recipe{}
-
-// 	if recipe != nil {
-// 		rsp.SetID(recipe.GetID())
-// 		rsp.SetName(recipe.GetName())
-// 		rsp.SetDescription(recipe.GetDescription())
-// 		rsp.SetIngredients(recipe.GetIngredients())
-// 		rsp.SetSteps(recipe.GetSteps())
-// 	}
-// 	return rsp
-// }
-
-// maps a recipe MetadataObject to a recipe DTOOBject
-// func mapRecipeToDTOObject(recipe *mngtypes.Recipe) *hrstypes.Recipe {
-// 	rsp := &hrstypes.Recipe{}
-
-// 	if recipe != nil {
-// 		rsp.SetID(recipe.GetID())
-// 		rsp.SetName(recipe.GetName())
-// 		rsp.SetDescription(recipe.GetDescription())
-// 		rsp.SetIngredients(recipe.GetIngredients())
-// 		rsp.SetSteps(recipe.GetSteps())
-// 	}
-// 	return rsp
-// }
-
-// maps an ingredient DTOOBject to an ingredient MetadataObject
-// func mapIngredientToMetadataObject(ingredient *hrstypes.Ingredient) *mngtypes.Ingredient {
-// 	rsp := &mngtypes.Ingredient{}
-
-// 	if ingredient != nil {
-// 		rsp.SetID(ingredient.GetID())
-// 		rsp.SetName(ingredient.GetName())
-// 		rsp.SetDescription(ingredient.GetDescription())
-// 		rsp.SetQuantity(ingredient.GetQuantity())
-// 	}
-// 	return rsp
-// }
-
-// maps an ingredient MetadataObject to an ingredient DTOOBject
-// func mapIngredientToDTOObject(ingredient *mngtypes.Ingredient) *hrstypes.Ingredient {
-// 	rsp := &hrstypes.Ingredient{}
-
-// 	if ingredient != nil {
-// 		rsp.SetID(ingredient.GetID())
-// 		rsp.SetName(ingredient.GetName())
-// 		rsp.SetDescription(ingredient.GetDescription())
-// 		rsp.SetQuantity(ingredient.GetQuantity())
-// 	}
-// 	return rsp
-// }
