@@ -15,3 +15,12 @@ Initial Home Recipes Service version:
 * Worker implementation with dummy responses.
 
 * Error handling.
+
+## Version 1.0.0
+
+First stable version.
+
+* All CRUD operations for recipes and ingredients are implemented.
+* Mux library controls the http requests.
+* Urface cli gives us a configuration cli tool for our application.
+* We use channeling to orchestate our application.
